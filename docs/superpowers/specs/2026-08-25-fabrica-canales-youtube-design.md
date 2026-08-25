@@ -65,12 +65,12 @@ Cada canal tiene un "perfil/ADN" que se inyecta automáticamente en cada generac
 
 1. **Elegir el tema**: vía scouting parametrizado en el Discovery Engine, o vía **Clonar Canal** (sección 6).
 2. **Keywords + títulos**: research de keywords sobre el tema elegido → 5-10 títulos estratégicos generados → el equipo elige.
-3. **Guion**: generado en el idioma objetivo, estructurado en beats (hook 0-15s, payoff cada 60-90s, CTA), inyectando el perfil del canal. **Checkpoint humano obligatorio.**
+3. **Guion**: generado en el idioma objetivo, estructurado en beats (hook 0-15s, payoff cada 60-90s, CTA), inyectando el perfil del canal. El equipo especifica la **duración objetivo del video** (minutos/segundos); el sistema la convierte a un conteo de caracteres estimado (ver sección 6) y genera con un margen extra de caracteres — mejor que sobre a que falte. En la misma generación se produce el **SEO del video** (descripción, tags, categoría) usando el guion + las keywords del paso 2. **Checkpoint humano obligatorio** (guion y SEO).
 4. **Audio**: guion aprobado → TTS (Kokoro para borrador/volumen, ElevenLabs para voz de marca clonada) → audio + transcripción con timestamps.
 5. **Plan de tomas (shot list)**: el guion se descompone en escenas individuales con duración (ajustada a los timestamps del audio), prompt visual (texto de esa parte + estilo de referencia del canal), y número de secuencia (`scene_001`, `scene_002`...).
 6. **Generación visual**: cada toma → Veo/Higgsfield (clip) o Nano Banana Pro (imagen fija), usando el prompt + referencia de estilo del canal. **Checkpoint humano por toma** (regenerar solo la que falló, no el video completo — control de calidad y de costo).
 7. **Miniatura**: 2-3 opciones generadas en paralelo vía Nano Banana Pro/Ideogram usando la plantilla del canal + título elegido.
-8. **Metadatos**: descripción, tags, categoría — generados por prompt usando guion + keywords.
+8. **Metadatos**: la descripción, tags y categoría ya se generaron junto con el guion en el paso 3 — este paso es solo la confirmación/ajuste final antes de empaquetar, por si hubo cambios durante la producción (título elegido, versión final de miniatura, etc.).
 9. **Empaquetado y entrega**: clips numerados + audio + miniatura + metadatos, con manifiesto JSON, entregado al sistema de edición externo (contrato genérico y adaptable — ver sección 9).
 
 ---
@@ -80,7 +80,8 @@ Cada canal tiene un "perfil/ADN" que se inyecta automáticamente en cada generac
 - **`channels`** — perfil/ADN del canal (nicho, idioma, voz de marca, referencia visual, plantilla de miniatura, reglas de variación)
 - **`discovery_runs` / `discovery_results`** — cada búsqueda de scouting con sus filtros parametrizados y los canales/videos encontrados (independiente de los canales propios — es investigación de mercado)
 - **`channel_clone_plans` / `clone_plan_items`** — plan de clonación generado a partir de un canal fuente: catálogo analizado, outliers identificados, temas propuestos y su estado (pendiente/adaptado/cargado a producción)
-- **`videos`** — proyecto de video, pertenece a un `channel`, `status` de pipeline (`scouted → scripted → voiced → shot_planned → visualized → thumbnailed → exported`), referencias a tema/keywords/título elegidos
+- **`videos`** — proyecto de video, pertenece a un `channel`, `status` de pipeline (`scouted → scripted → voiced → shot_planned → visualized → thumbnailed → exported`), referencias a tema/keywords/título elegidos, `target_duration_seconds` (definido por el usuario), `target_character_count` (calculado, con margen de sobra incluido), y campos de SEO (descripción, tags, categoría) generados junto con el guion
+- **`voice_pace_calibration`** — tasa de caracteres-por-minuto calibrada por combinación voz+idioma (no por canal), reutilizable entre todos los canales que usen la misma voz, ajustada empíricamente después de cada generación de audio real (ver sección 6.1)
 - **`shots`** — tomas individuales de un video (número de secuencia, duración objetivo, prompt visual, estado: pendiente/generado/aprobado/rechazado)
 - **`assets`** — archivos generados (audio, clips, miniaturas), tipo, versión (para regeneraciones), costo asociado
 - **`jobs`** — cola de trabajos async hacia APIs externas (Veo, Nano Banana, ElevenLabs/Kokoro, AssemblyAI, motor de scraping), estado y reintentos
@@ -126,7 +127,29 @@ Tres motores posibles, todos detrás de la misma interfaz interna (para poder ca
 
 ---
 
-## 6. Manejo de errores y control de calidad (aplica a todo el pipeline, no solo Fase 1)
+## 6. Script Factory — spec detallado (duración objetivo, caracteres, SEO)
+
+Este módulo se construye en Fase 2 (roadmap, sección 11), pero estos requisitos de comportamiento quedan definidos ahora para que la implementación futura no sea ambigua.
+
+### 6.1 Duración objetivo → conteo de caracteres
+
+- El usuario especifica la duración deseada del video (minutos/segundos) al pedir el guion.
+- El sistema convierte esa duración a un conteo de caracteres estimado usando una **tasa de caracteres por minuto calibrada por voz+idioma** (no un promedio genérico único) — el ritmo de habla varía entre Kokoro y ElevenLabs, y entre idiomas (el español tiende a usar más caracteres por palabra que el inglés a un ritmo de habla similar).
+- Esta tasa se calibra empíricamente: después de generar el audio real (Fase 1, paso 4 del flujo), se compara la duración real del audio contra el conteo de caracteres del guion que lo generó, y se ajusta la tasa guardada (`voice_pace_calibration`, sección 4) para esa combinación voz+idioma. El sistema mejora su estimado con cada video generado, no depende de un valor fijo asumido desde el día uno.
+
+### 6.2 Margen de sobra (mejor que sobre a que falte)
+
+- El guion se genera apuntando a un conteo de caracteres **por encima** del estimado (margen configurable, ej. +10-15%), nunca por debajo — es más fácil recortar un guion en el checkpoint humano (Fase 1, paso 3) que tener que extenderlo para llegar a la duración deseada.
+- El margen exacto es un parámetro configurable a nivel de canal o de generación individual, no un valor fijo en el código.
+
+### 6.3 SEO co-generado con el guion
+
+- La misma llamada de generación que produce el guion también produce descripción, tags y categoría (SEO), usando el guion recién generado + las keywords elegidas en el paso 2 del flujo — no se espera hasta después de la producción visual para generar esto.
+- El paso de "Metadatos" del flujo (Fase 1, paso 8) pasa a ser solo confirmación/ajuste final antes de empaquetar, no generación desde cero.
+
+---
+
+## 7. Manejo de errores y control de calidad (aplica a todo el pipeline, no solo Fase 1)
 
 - Cada paso del pipeline (guion, audio, cada toma, miniatura) tiene su propio checkpoint independiente — se puede regenerar un paso puntual sin rehacer el video completo.
 - Antes de disparar generación de video (la integración más cara, $0.12–0.75/seg según proveedor), el sistema muestra una estimación de costo del shot list completo para aprobación explícita del equipo.
@@ -134,7 +157,7 @@ Tres motores posibles, todos detrás de la misma interfaz interna (para poder ca
 
 ---
 
-## 7. Testing y validación
+## 8. Testing y validación
 
 - Tests unitarios sobre la lógica de scoring/filtrado del Discovery Engine (composición de señales de monetización, detección de outliers en Clonar Canal) — es lógica determinística y testeable sin mockear las APIs externas.
 - Tests de integración con mocks para los 3 motores de datos (self-hosted, YouTube API, Apify) verificando que la interfaz de adaptador intercambiable realmente aísla al resto del sistema del motor específico.
@@ -142,7 +165,7 @@ Tres motores posibles, todos detrás de la misma interfaz interna (para poder ca
 
 ---
 
-## 8. Riesgos y controles de política de YouTube
+## 9. Riesgos y controles de política de YouTube
 
 - **Política "Inauthentic Content"** (renombrada 2025-07-15): penaliza contenido masivo/templado sin variación creativa, no el uso de IA en sí. La ola de enforcement de enero 2026 confirma que esto es un riesgo real y activo, no teórico.
 - **Control arquitectónico, no opcional**: las reglas de variación del perfil de canal (Fase 0) y el control de "nunca clonar guion literal" (sección 5.4) son requisitos de diseño de primera clase, no features opcionales a futuro.
@@ -150,7 +173,7 @@ Tres motores posibles, todos detrás de la misma interfaz interna (para poder ca
 
 ---
 
-## 9. Contrato de exportación (adaptable)
+## 10. Contrato de exportación (adaptable)
 
 Formato genérico por defecto, diseñado para poder adaptarse sin rediseño cuando se conecte con el sistema de edición automática existente (fuera de alcance de este documento):
 
@@ -161,23 +184,23 @@ Formato genérico por defecto, diseñado para poder adaptarse sin rediseño cuan
 
 ---
 
-## 10. Roadmap de módulos futuros (fuera del alcance de implementación de este spec)
+## 11. Roadmap de módulos futuros (fuera del alcance de implementación de este spec)
 
 Tool-mapping ya decidido para cuando les toque su propio ciclo spec → plan → build:
 
 | Módulo | Opción principal | Alternativa barata/nicho |
 |---|---|---|
-| Script Factory | Claude/Gemini API directo con prompt propio (estructura de beats) | scripzy.app (validar manualmente) |
+| Script Factory | Claude/Gemini API directo con prompt propio (estructura de beats, duración objetivo, SEO — ver sección 6) | scripzy.app (validar manualmente) |
 | Voice Factory | Kokoro (gratis, self-hosted) para borrador/volumen | ElevenLabs (voz de marca/clonada); ai33.pro (validar manualmente) |
 | Visual Factory | Veo 3.1 (video) + Nano Banana Pro (imagen) vía Gemini/Vertex API — misma cuenta Google para ambos | Higgsfield (ya conectado en el entorno de trabajo); Kling/Runway/Luma como respaldo |
 | Thumbnail Factory | Nano Banana Pro API | Ideogram/Recraft para overlays de texto |
 | Subtítulos | AssemblyAI ($0.0025/min) | Deepgram |
 | Música/SFX | Mubert API (generativo) | Zapsplat (gratis, sin API) |
-| Export/Handoff | Contrato genérico definido en sección 9 | — |
+| Export/Handoff | Contrato genérico definido en sección 10 | — |
 
 ---
 
-## 11. Fuera de alcance
+## 12. Fuera de alcance
 
-- El sistema de edición automática existente del equipo — solo se define el contrato de entrada (sección 9), no su funcionamiento interno.
+- El sistema de edición automática existente del equipo — solo se define el contrato de entrada (sección 10), no su funcionamiento interno.
 - Publicación/programación automática en YouTube y analítica post-publicación de los canales propios — no mencionado como requisito, puede evaluarse como módulo futuro si se necesita.
