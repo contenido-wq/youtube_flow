@@ -305,6 +305,108 @@ export type Database = {
         }
         Relationships: []
       }
+      videos: {
+        Row: {
+          channel_id: string
+          created_at: string
+          created_by: string
+          error_message: string | null
+          id: string
+          reference_transcript: string | null
+          script_content: string | null
+          seo_description: string | null
+          seo_image_prompt: string | null
+          seo_pinned_comment: string | null
+          seo_tags: string[] | null
+          seo_thumbnail_phrases: string[] | null
+          status: string
+          style: string
+          target_character_count: number
+          target_duration_seconds: number
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          id?: string
+          reference_transcript?: string | null
+          script_content?: string | null
+          seo_description?: string | null
+          seo_image_prompt?: string | null
+          seo_pinned_comment?: string | null
+          seo_tags?: string[] | null
+          seo_thumbnail_phrases?: string[] | null
+          status?: string
+          style?: string
+          target_character_count: number
+          target_duration_seconds: number
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          id?: string
+          reference_transcript?: string | null
+          script_content?: string | null
+          seo_description?: string | null
+          seo_image_prompt?: string | null
+          seo_pinned_comment?: string | null
+          seo_tags?: string[] | null
+          seo_thumbnail_phrases?: string[] | null
+          status?: string
+          style?: string
+          target_character_count?: number
+          target_duration_seconds?: number
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_pace_calibration: {
+        Row: {
+          brand_voice_id: string
+          chars_per_minute: number
+          id: string
+          target_language: string
+          updated_at: string
+        }
+        Insert: {
+          brand_voice_id: string
+          chars_per_minute: number
+          id?: string
+          target_language: string
+          updated_at?: string
+        }
+        Update: {
+          brand_voice_id?: string
+          chars_per_minute?: number
+          id?: string
+          target_language?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
