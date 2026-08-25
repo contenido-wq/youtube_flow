@@ -20,6 +20,7 @@
 - Roles del sistema (spec sección 1): `admin`, `investigador`, `guionista`, `editor`, `aprobador`. En esta fase solo `admin` e `investigador` tienen permisos de escritura activos (canales); los demás roles existen ya en el enum para que los módulos futuros (Script/Voice/Visual Factory) no requieran una migración de esquema para agregarlos.
 - Sin auto-registro: la creación de cuentas de equipo es responsabilidad de un `admin` (vía script de seed en esta fase — una UI de invitación queda fuera de alcance de Fase 1, ver Task 3).
 - El campo `thumbnail_template` (jsonb) ya existe en `channels` desde esta fase (default `{}`), pero su edición vía UI queda diferida al módulo Thumbnail Factory (roadmap, spec sección 11) — construir un editor visual de plantilla ahora sería trabajo desechable.
+- Si el trabajo se hace en un git worktree (ej. `.claude/worktrees/<nombre>/`), el `eslint.config.mjs` generado por `create-next-app` (Task 1, Step 1) necesita `.claude/**` agregado a su `globalIgnores` — sin eso, correr `npm run lint` desde el checkout principal recorre también la copia completa del proyecto dentro de cualquier worktree anidado.
 
 ---
 
@@ -103,7 +104,7 @@ Crear `vitest.config.ts`:
 
 ```typescript
 import path from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
@@ -116,11 +117,15 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    // Nested git worktrees (e.g. .claude/worktrees/<name>/) contain a full
+    // copy of the project — without this, running tests from the main
+    // checkout doubles up on every test file found inside them.
+    exclude: [...configDefaults.exclude, '.claude/**'],
   },
 })
 ```
 
-Nota: Next.js resuelve el alias `@/*` solo (vía `tsconfig.json`), pero Vitest corre sobre Vite directamente y no lee `tsconfig.json` paths sin configuración explícita — de ahí el bloque `resolve.alias` de arriba, sin el cual cualquier test que importe con `@/...` falla con "Failed to resolve import" aunque el archivo exista.
+Nota: Next.js resuelve el alias `@/*` solo (vía `tsconfig.json`), pero Vitest corre sobre Vite directamente y no lee `tsconfig.json` paths sin configuración explícita — de ahí el bloque `resolve.alias` de arriba, sin el cual cualquier test que importe con `@/...` falla con "Failed to resolve import" aunque el archivo exista. El `exclude` con `.claude/**` evita que, al correr los tests desde el checkout principal (fuera de un worktree), se dupliquen o se choquen con la copia completa del proyecto que vive dentro de cualquier worktree anidado en `.claude/worktrees/`.
 
 Crear `tests/setup.ts`:
 

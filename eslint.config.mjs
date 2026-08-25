@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Nested git worktrees (e.g. .claude/worktrees/<name>/) contain a full
+    // copy of the project, including their own node_modules — without this,
+    // running lint from the main checkout sweeps through them too.
+    ".claude/**",
   ]),
 ]);
 
