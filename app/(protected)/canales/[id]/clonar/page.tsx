@@ -1,46 +1,63 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { runClonePlan } from './actions'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { Badge } from '@/components/ui/Badge'
 
-export default async function ClonarCanalPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ planId?: string }>
-}) {
-  const { id: channelId } = await params
-  const { planId } = await searchParams
-  const supabase = await createClient()
+interface ClonePlanItemRow {
+  id: string
+  proposed_topic: string
+  proposed_angle: string
+  source_video_title: string
+  source_video_views: number
+}
+
+export default function ClonarCanalPage() {
+  const params = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
+  const planId = searchParams.get('planId')
+
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [items, setItems] = useState<ClonePlanItemRow[] | null>(null)
+
+  useEffect(() => {
+    if (!planId) return
+    const supabase = createClient()
+    supabase
+      .from('clone_plan_items')
+      .select('*')
+      .eq('clone_plan_id', planId)
+      .then(({ data }) => setItems(data))
+  }, [planId])
 
   async function handleSubmit(formData: FormData) {
-    'use server'
-    await runClonePlan(
-      channelId,
-      formData.get('sourceYoutubeChannelId') as string,
-      formData.get('sourceChannelTitle') as string
-    )
+    setLoading(true)
+    setError(null)
+    const result = await runClonePlan(params.id, formData.get('sourceUrl') as string)
+    setLoading(false)
+    if (result?.error) setError(result.error)
   }
-
-  const items = planId
-    ? (await supabase.from('clone_plan_items').select('*').eq('clone_plan_id', planId)).data
-    : null
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold text-ink">Clonar canal</h1>
       <Card className="mb-6 max-w-xl">
         <form action={handleSubmit}>
-          <Field label="ID del canal de YouTube fuente">
-            <Input name="sourceYoutubeChannelId" placeholder="UC..." required />
+          <Field label="URL del canal de YouTube a clonar">
+            <Input
+              name="sourceUrl"
+              placeholder="https://www.youtube.com/@NombreDelCanal"
+              required
+            />
           </Field>
-          <Field label="Nombre del canal fuente">
-            <Input name="sourceChannelTitle" required />
-          </Field>
-          <Button type="submit">Generar plan de clonación</Button>
+          {error && <p className="mb-4 text-sm font-medium text-accent-coral-ink" role="alert">{error}</p>}
+          <Button type="submit" disabled={loading}>{loading ? 'Generando...' : 'Generar plan de clonación'}</Button>
         </form>
       </Card>
 

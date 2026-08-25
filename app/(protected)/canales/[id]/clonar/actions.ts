@@ -3,17 +3,24 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAnthropicClient } from '@/lib/llm/anthropic-client'
 import { getChannelCatalog } from '@/lib/discovery/channel-catalog'
+import { resolveChannelFromUrl } from '@/lib/discovery/resolve-channel-url'
 import { calculateUploadCadence, findOutlierVideos } from '@/lib/discovery/clone-analysis'
 import { generateClonePlanItems } from '@/lib/discovery/clone-plan-generator'
 import { redirect } from 'next/navigation'
 
-export async function runClonePlan(channelId: string, sourceYoutubeChannelId: string, sourceChannelTitle: string) {
+export async function runClonePlan(channelId: string, sourceUrl: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { planId: null, error: 'No autenticado' }
 
   const { data: channel } = await supabase.from('channels').select('niche, variation_rules').eq('id', channelId).single()
   if (!channel) return { planId: null, error: 'Canal no encontrado' }
+
+  const resolved = await resolveChannelFromUrl(process.env.YOUTUBE_API_KEY!, sourceUrl)
+  if (!resolved) return { planId: null, error: 'No se pudo encontrar ese canal de YouTube — revisa la URL' }
+
+  const sourceYoutubeChannelId = resolved.channelId
+  const sourceChannelTitle = resolved.title
 
   const catalog = await getChannelCatalog(process.env.YOUTUBE_API_KEY!, sourceYoutubeChannelId)
   const cadence = calculateUploadCadence(catalog)
