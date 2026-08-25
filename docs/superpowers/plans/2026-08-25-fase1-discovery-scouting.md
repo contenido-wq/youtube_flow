@@ -675,7 +675,11 @@ export class YouTubeApiDiscoveryEngine implements DiscoveryEngine {
     return results
   }
 
-  private async searchCandidateChannels(query: string, publishedAfter: string, maxResults: number) {
+  private async searchCandidateChannels(
+    query: string,
+    publishedAfter: string,
+    maxResults: number
+  ): Promise<{ channelId: string; title: string; publishedAt: string }[]> {
     const url = new URL(`${BASE_URL}/search`)
     url.searchParams.set('part', 'snippet')
     url.searchParams.set('type', 'channel')
@@ -694,7 +698,9 @@ export class YouTubeApiDiscoveryEngine implements DiscoveryEngine {
     }))
   }
 
-  private async hydrateChannels(channelIds: string[]) {
+  private async hydrateChannels(
+    channelIds: string[]
+  ): Promise<Map<string, { subscriberCount: number | null; uploadsPlaylistId: string | undefined }>> {
     const url = new URL(`${BASE_URL}/channels`)
     url.searchParams.set('part', 'statistics,contentDetails')
     url.searchParams.set('id', channelIds.join(','))
@@ -713,7 +719,9 @@ export class YouTubeApiDiscoveryEngine implements DiscoveryEngine {
     return map
   }
 
-  private async getRecentVideoIds(uploadsPlaylistId: string) {
+  private async getRecentVideoIds(
+    uploadsPlaylistId: string
+  ): Promise<{ videoId: string; videoPublishedAt: string }[]> {
     const url = new URL(`${BASE_URL}/playlistItems`)
     url.searchParams.set('part', 'contentDetails')
     url.searchParams.set('playlistId', uploadsPlaylistId)
@@ -729,7 +737,9 @@ export class YouTubeApiDiscoveryEngine implements DiscoveryEngine {
     }))
   }
 
-  private async getVideoStats(videoIds: string[]) {
+  private async getVideoStats(
+    videoIds: string[]
+  ): Promise<{ viewCount: number; durationSeconds: number }[]> {
     const url = new URL(`${BASE_URL}/videos`)
     url.searchParams.set('part', 'statistics,contentDetails')
     url.searchParams.set('id', videoIds.join(','))
@@ -745,6 +755,8 @@ export class YouTubeApiDiscoveryEngine implements DiscoveryEngine {
   }
 }
 ```
+
+Nota: los tipos de retorno explícitos en los 4 métodos privados (`Promise<...>`) son necesarios — sin ellos, TypeScript infiere `Promise<any>` porque `response.json()` es `any`, y eso rompe `noImplicitAny` en `npm run build` más adelante (parámetros de `.map()`/`.filter()` quedan como `any` implícito) aunque `npm test` pase sin problema.
 
 - [ ] **Step 5: Correr el test y confirmar que pasa**
 
