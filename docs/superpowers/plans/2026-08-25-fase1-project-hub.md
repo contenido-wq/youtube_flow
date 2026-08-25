@@ -16,6 +16,7 @@
 - RLS habilitado en toda tabla del schema `public` (schema expuesto por defecto) — sin excepciones.
 - Desde el 2026-04-28, las tablas nuevas de `public` **no** se exponen automáticamente a la Data API — cada tabla necesita `GRANT` explícito a `authenticated` además de sus políticas RLS.
 - Nunca usar `raw_user_meta_data` / `user_metadata` en decisiones de autorización (es editable por el usuario). La autorización por rol vive en la tabla `team_members`, no en el JWT.
+- Un UPDATE bloqueado por RLS no lanza error — actualiza 0 filas silenciosamente (comportamiento documentado de Postgres/PostgREST). Cualquier test que verifique "esto no debería poder actualizarse" debe confirmar 0 filas devueltas (`.select()` después del `.update()`) o que el valor no cambió, nunca `expect(error).not.toBeNull()`.
 - Ninguna función `security definer` va en un schema expuesto (`public`); van en un schema privado (`private`).
 - Roles del sistema (spec sección 1): `admin`, `investigador`, `guionista`, `editor`, `aprobador`. En esta fase solo `admin` e `investigador` tienen permisos de escritura activos (canales); los demás roles existen ya en el enum para que los módulos futuros (Script/Voice/Visual Factory) no requieran una migración de esquema para agregarlos.
 - Sin auto-registro: la creación de cuentas de equipo es responsabilidad de un `admin` (vía script de seed en esta fase — una UI de invitación queda fuera de alcance de Fase 1, ver Task 3).
@@ -245,12 +246,25 @@ describe('RLS: team_members', () => {
     const nonAdmin = await createTestUser('guionista', 'nonadmin')
     createdUserIds.push(nonAdmin.userId)
 
-    const { error } = await nonAdmin.client
+    // RLS en UPDATE no lanza error para una fila que no matchea el USING —
+    // simplemente actualiza 0 filas (comportamiento documentado de Postgres/
+    // PostgREST). La forma correcta de verificar el bloqueo es confirmar que
+    // no se devolvió ninguna fila actualizada, no que haya un error.
+    const { data, error } = await nonAdmin.client
       .from('team_members')
       .update({ role: 'admin' })
       .eq('id', admin.userId)
+      .select()
 
-    expect(error).not.toBeNull()
+    expect(error).toBeNull()
+    expect(data).toHaveLength(0)
+
+    const { data: unchanged } = await nonAdmin.client
+      .from('team_members')
+      .select('role')
+      .eq('id', admin.userId)
+      .single()
+    expect(unchanged!.role).toBe('admin')
   })
 
   it('un admin sí puede cambiar el rol de otro miembro', async () => {
@@ -339,7 +353,7 @@ Expected: PASS (3 tests).
 
 - [ ] **Step 8: Correr advisors de seguridad**
 
-Run: `npx supabase db advisors` (si la versión del CLI es &lt;2.81.3, omitir este paso y anotarlo en el commit)
+Run: `npx supabase db advisors --linked --type security` (usa el proyecto remoto vinculado, no requiere Docker/stack local; si la versión del CLI es &lt;2.81.3, omitir este paso y anotarlo en el commit)
 Expected: sin advertencias críticas sobre `team_members` (RLS habilitado, función `security definer` fuera de schema expuesto).
 
 - [ ] **Step 9: Commit**
@@ -798,6 +812,7 @@ create policy "channels_delete_admin"
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();

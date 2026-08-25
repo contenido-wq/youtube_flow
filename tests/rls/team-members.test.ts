@@ -26,12 +26,25 @@ describe('RLS: team_members', () => {
     const nonAdmin = await createTestUser('guionista', 'nonadmin')
     createdUserIds.push(nonAdmin.userId)
 
-    const { error } = await nonAdmin.client
+    // RLS en UPDATE no lanza error para una fila que no matchea el USING —
+    // simplemente actualiza 0 filas (comportamiento documentado de Postgres/
+    // PostgREST). La forma correcta de verificar el bloqueo es confirmar que
+    // no se devolvió ninguna fila actualizada, no que haya un error.
+    const { data, error } = await nonAdmin.client
       .from('team_members')
       .update({ role: 'admin' })
       .eq('id', admin.userId)
+      .select()
 
-    expect(error).not.toBeNull()
+    expect(error).toBeNull()
+    expect(data).toHaveLength(0)
+
+    const { data: unchanged } = await nonAdmin.client
+      .from('team_members')
+      .select('role')
+      .eq('id', admin.userId)
+      .single()
+    expect(unchanged!.role).toBe('admin')
   })
 
   it('un admin sí puede cambiar el rol de otro miembro', async () => {

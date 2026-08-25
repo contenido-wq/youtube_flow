@@ -41,6 +41,7 @@ create policy "channels_delete_admin"
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
