@@ -5,7 +5,7 @@ import { updateChannel } from '../actions'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Field, Input, Textarea } from '@/components/ui/Field'
-import { IconCopy, IconHash } from '@/components/ui/icons'
+import { IconCopy, IconHash, IconFileText } from '@/components/ui/icons'
 
 export default async function EditarCanalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,6 +32,11 @@ export default async function EditarCanalPage({ params }: { params: Promise<{ id
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Editar canal</h1>
         <div className="flex gap-2">
+          <Link href={`/canales/${id}/guiones`}>
+            <Button variant="secondary" className="gap-2">
+              <IconFileText width={16} height={16} /> Guiones
+            </Button>
+          </Link>
           <Link href={`/canales/${id}/clonar`}>
             <Button variant="secondary" className="gap-2">
               <IconCopy width={16} height={16} /> Clonar canal
