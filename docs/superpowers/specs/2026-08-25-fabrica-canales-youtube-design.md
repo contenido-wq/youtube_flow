@@ -127,9 +127,9 @@ Tres motores posibles, todos detrás de la misma interfaz interna (para poder ca
 
 ---
 
-## 6. Script Factory — spec detallado (duración objetivo, caracteres, SEO)
+## 6. Script Factory — spec detallado (duración objetivo, caracteres, SEO, estilo, segmentación)
 
-Este módulo se construye en Fase 2 (roadmap, sección 11), pero estos requisitos de comportamiento quedan definidos ahora para que la implementación futura no sea ambigua.
+Módulo de Fase 2 del roadmap original (sección 11) — pasa a construirse ahora. Se investigó una herramienta comparable del nicho (Scripsy.app) para incorporar patrones ya probados; el análisis completo de qué se adoptó y qué no está documentado en `docs/superpowers/specs/2026-08-25-scripsy-gap-analysis.md`.
 
 ### 6.1 Duración objetivo → conteo de caracteres
 
@@ -144,8 +144,26 @@ Este módulo se construye en Fase 2 (roadmap, sección 11), pero estos requisito
 
 ### 6.3 SEO co-generado con el guion
 
-- La misma llamada de generación que produce el guion también produce descripción, tags y categoría (SEO), usando el guion recién generado + las keywords elegidas en el paso 2 del flujo — no se espera hasta después de la producción visual para generar esto.
+- La misma llamada de generación que produce el guion también produce el paquete de metadatos completo, usando el guion recién generado + las keywords elegidas en el paso 2 del flujo — no se espera hasta después de la producción visual para generar esto. El paquete incluye:
+  - Descripción
+  - Tags
+  - Categoría
+  - **Comentario fijado** (texto corto para fomentar interacción temprana — hallazgo de Scripsy, no estaba en la v1 de este spec)
+  - **Frases para miniatura** (2-3 opciones de texto corto para superponer en la miniatura)
+  - **Prompt de imagen para la miniatura** (instrucción lista para Nano Banana Pro/Ideogram — insumo directo para el Thumbnail Factory de la sección 11, aunque ese módulo no se construya todavía)
 - El paso de "Metadatos" del flujo (Fase 1, paso 8) pasa a ser solo confirmación/ajuste final antes de empaquetar, no generación desde cero.
+
+### 6.4 Estilo de guion: Estándar vs. Personalizado
+
+- **Estándar**: estructura de beats ya definida en este spec (hook 0-15s, payoff cada 60-90s, CTA) — el comportamiento por defecto.
+- **Personalizado**: el usuario pega la transcripción de un video de referencia (no un canal completo — eso es Clonar Canal, sección 5.4). El sistema analiza el patrón estructural y narrativo de esa transcripción específica (ritmo, tipo de aperturas, forma de cerrar ideas) y genera el guion nuevo replicando ese patrón — nunca el texto literal, misma regla de variación que en Clonar Canal.
+- Es un control de grano más fino que Clonar Canal: "quiero que este guion en particular suene como este video" vs. "quiero una estrategia de contenido completa modelada en este canal".
+
+### 6.5 Segmentación coherente por bloques (para locución)
+
+- Una vez aprobado el guion, el usuario puede pedir dividirlo en bloques de un tamaño objetivo en caracteres (ej. 3,000) — pensado para alimentar la generación de audio por partes (relevante para límites de longitud de ElevenLabs/Kokoro en el Voice Factory).
+- Lógica "coherence-first": el sistema ajusta cada corte al punto de oración/idea más cercano al tamaño objetivo, nunca corta una frase a la mitad — el tamaño real de cada bloque varía un poco alrededor del objetivo a cambio de no romper la coherencia.
+- Es una utilidad pura (texto entra, lista de bloques de texto sale) reutilizable por el Voice Factory cuando se construya.
 
 ---
 
@@ -190,7 +208,7 @@ Tool-mapping ya decidido para cuando les toque su propio ciclo spec → plan →
 
 | Módulo | Opción principal | Alternativa barata/nicho |
 |---|---|---|
-| Script Factory | Claude/Gemini API directo con prompt propio (estructura de beats, duración objetivo, SEO — ver sección 6) | scripzy.app (validar manualmente) |
+| Script Factory | **En construcción (ver sección 6)** — Claude API directo con prompt propio (estructura de beats, duración objetivo, SEO extendido, estilo, segmentación) | scripzy.app (referencia de producto, no integración — ver análisis de brecha) |
 | Voice Factory | Kokoro (gratis, self-hosted) para borrador/volumen | ElevenLabs (voz de marca/clonada); ai33.pro (validar manualmente) |
 | Visual Factory | Veo 3.1 (video) + Nano Banana Pro (imagen) vía Gemini/Vertex API — misma cuenta Google para ambos | Higgsfield (ya conectado en el entorno de trabajo); Kling/Runway/Luma como respaldo |
 | Thumbnail Factory | Nano Banana Pro API | Ideogram/Recraft para overlays de texto |
