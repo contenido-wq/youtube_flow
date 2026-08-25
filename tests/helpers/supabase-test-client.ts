@@ -37,5 +37,17 @@ export async function createTestUser(role: string, emailPrefix: string) {
 
 export async function deleteTestUser(userId: string) {
   const admin = serviceClient()
-  await admin.auth.admin.deleteUser(userId)
+
+  // channels.created_by / discovery_runs.created_by / channel_clone_plans.created_by
+  // all reference team_members(id) WITHOUT cascade (deleting a real team member
+  // should never silently delete the content they created) — so test cleanup
+  // must delete any rows a test user created before deleting the user itself,
+  // or the FK blocks the delete. clone_plan_items and discovery_results cascade
+  // from their parents, so deleting these three is enough.
+  await admin.from('channels').delete().eq('created_by', userId)
+  await admin.from('discovery_runs').delete().eq('created_by', userId)
+  await admin.from('channel_clone_plans').delete().eq('created_by', userId)
+
+  const { error } = await admin.auth.admin.deleteUser(userId)
+  if (error) throw new Error(`No se pudo borrar el usuario de prueba ${userId}: ${error.message}`)
 }

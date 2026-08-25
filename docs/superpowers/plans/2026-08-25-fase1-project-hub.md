@@ -17,6 +17,7 @@
 - Desde el 2026-04-28, las tablas nuevas de `public` **no** se exponen automáticamente a la Data API — cada tabla necesita `GRANT` explícito a `authenticated` además de sus políticas RLS.
 - Nunca usar `raw_user_meta_data` / `user_metadata` en decisiones de autorización (es editable por el usuario). La autorización por rol vive en la tabla `team_members`, no en el JWT.
 - Un UPDATE bloqueado por RLS no lanza error — actualiza 0 filas silenciosamente (comportamiento documentado de Postgres/PostgREST). Cualquier test que verifique "esto no debería poder actualizarse" debe confirmar 0 filas devueltas (`.select()` después del `.update()`) o que el valor no cambió, nunca `expect(error).not.toBeNull()`.
+- **`admin.auth.admin.deleteUser()` no lanza excepción si falla — devuelve `{ error }`.** Si un test crea `channels`/`discovery_runs`/`channel_clone_plans` con `created_by` apuntando al usuario de prueba, borrar ese usuario sin borrar antes esas filas falla por FK (no cascade a propósito) y, si no se revisa `error`, el fallo queda invisible: el usuario de prueba (y todo lo que creó) se queda para siempre en la base real conectada. `deleteTestUser` (Task 2) ya revisa el error y borra las filas dependientes primero — cualquier tabla nueva con `created_by uuid references team_members(id)` debe agregarse ahí también.
 - Ninguna función `security definer` va en un schema expuesto (`public`); van en un schema privado (`private`).
 - Roles del sistema (spec sección 1): `admin`, `investigador`, `guionista`, `editor`, `aprobador`. En esta fase solo `admin` e `investigador` tienen permisos de escritura activos (canales); los demás roles existen ya en el enum para que los módulos futuros (Script/Voice/Visual Factory) no requieran una migración de esquema para agregarlos.
 - Sin auto-registro: la creación de cuentas de equipo es responsabilidad de un `admin` (vía script de seed en esta fase — una UI de invitación queda fuera de alcance de Fase 1, ver Task 3).
@@ -209,7 +210,21 @@ export async function createTestUser(role: string, emailPrefix: string) {
 
 export async function deleteTestUser(userId: string) {
   const admin = serviceClient()
-  await admin.auth.admin.deleteUser(userId)
+
+  // channels.created_by / discovery_runs.created_by / channel_clone_plans.created_by
+  // all reference team_members(id) WITHOUT cascade (deleting a real team member
+  // should never silently delete the content they created) — so test cleanup
+  // must delete any rows a test user created before deleting the user itself,
+  // or the FK blocks the delete. clone_plan_items and discovery_results cascade
+  // from their parents, so deleting these three is enough. (Tables from later
+  // plans don't exist yet when this file is first written — add their
+  // `created_by` cleanup here too as they're introduced.)
+  await admin.from('channels').delete().eq('created_by', userId)
+  await admin.from('discovery_runs').delete().eq('created_by', userId)
+  await admin.from('channel_clone_plans').delete().eq('created_by', userId)
+
+  const { error } = await admin.auth.admin.deleteUser(userId)
+  if (error) throw new Error(`No se pudo borrar el usuario de prueba ${userId}: ${error.message}`)
 }
 ```
 
