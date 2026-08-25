@@ -39,6 +39,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      channel_clone_plans: {
+        Row: {
+          analyzed_video_count: number
+          avg_duration_seconds: number
+          channel_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          id: string
+          source_channel_title: string
+          source_youtube_channel_id: string
+          status: string
+          upload_cadence_per_week: number
+        }
+        Insert: {
+          analyzed_video_count: number
+          avg_duration_seconds: number
+          channel_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          id?: string
+          source_channel_title: string
+          source_youtube_channel_id: string
+          status?: string
+          upload_cadence_per_week: number
+        }
+        Update: {
+          analyzed_video_count?: number
+          avg_duration_seconds?: number
+          channel_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          id?: string
+          source_channel_title?: string
+          source_youtube_channel_id?: string
+          status?: string
+          upload_cadence_per_week?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_clone_plans_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_clone_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channels: {
         Row: {
           brand_voice_id: string | null
@@ -88,6 +148,47 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clone_plan_items: {
+        Row: {
+          clone_plan_id: string
+          created_at: string
+          id: string
+          proposed_angle: string
+          proposed_topic: string
+          source_video_title: string
+          source_video_views: number
+          status: string
+        }
+        Insert: {
+          clone_plan_id: string
+          created_at?: string
+          id?: string
+          proposed_angle: string
+          proposed_topic: string
+          source_video_title: string
+          source_video_views: number
+          status?: string
+        }
+        Update: {
+          clone_plan_id?: string
+          created_at?: string
+          id?: string
+          proposed_angle?: string
+          proposed_topic?: string
+          source_video_title?: string
+          source_video_views?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clone_plan_items_clone_plan_id_fkey"
+            columns: ["clone_plan_id"]
+            isOneToOne: false
+            referencedRelation: "channel_clone_plans"
             referencedColumns: ["id"]
           },
         ]
