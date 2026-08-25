@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { researchTopic } from './actions'
 import type { KeywordData } from '@/lib/keywords/keywords-everywhere-client'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Field, Input } from '@/components/ui/Field'
+import { Badge } from '@/components/ui/Badge'
 
 export default function KeywordsPage() {
   const [topic, setTopic] = useState('')
@@ -21,31 +25,42 @@ export default function KeywordsPage() {
 
   return (
     <div>
-      <h1>Keywords y títulos</h1>
-      <form onSubmit={handleSubmit}>
-        <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Tema del video" required />
-        <button type="submit" disabled={loading}>{loading ? 'Buscando...' : 'Investigar'}</button>
-      </form>
+      <h1 className="mb-6 text-2xl font-bold text-ink">Keywords y títulos</h1>
+      <Card className="mb-6 max-w-xl">
+        <form onSubmit={handleSubmit}>
+          <Field label="Tema del video">
+            <Input value={topic} onChange={(e) => setTopic(e.target.value)} required />
+          </Field>
+          <Button type="submit" disabled={loading}>{loading ? 'Buscando...' : 'Investigar'}</Button>
+        </form>
+      </Card>
 
-      {keywordData.length > 0 && (
-        <>
-          <h2>Keywords</h2>
-          <ul>
-            {keywordData.map((k) => (
-              <li key={k.keyword}>{k.keyword} — volumen: {k.volume}, competencia: {k.competition}</li>
-            ))}
-          </ul>
-        </>
-      )}
+      <div className="grid gap-6 sm:grid-cols-2">
+        {keywordData.length > 0 && (
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-muted">Keywords</h2>
+            <div className="flex flex-col gap-2">
+              {keywordData.map((k) => (
+                <div key={k.keyword} className="flex items-center justify-between text-sm">
+                  <span className="text-ink">{k.keyword}</span>
+                  <Badge tone="sky">{k.volume} / mes</Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
-      {titles.length > 0 && (
-        <>
-          <h2>Títulos propuestos</h2>
-          <ul>
-            {titles.map((t) => <li key={t}>{t}</li>)}
-          </ul>
-        </>
-      )}
+        {titles.length > 0 && (
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-muted">Títulos propuestos</h2>
+            <ul className="flex flex-col gap-2 text-sm text-ink">
+              {titles.map((t) => (
+                <li key={t} className="rounded-control bg-canvas px-3 py-2">{t}</li>
+              ))}
+            </ul>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

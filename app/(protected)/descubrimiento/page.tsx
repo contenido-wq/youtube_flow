@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { runDiscovery } from './actions'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Field, Input } from '@/components/ui/Field'
 
 export default function DescubrimientoPage() {
   const [error, setError] = useState<string | null>(null)
@@ -21,23 +24,26 @@ export default function DescubrimientoPage() {
   }
 
   return (
-    <form action={handleSubmit}>
-      <h1>Nueva búsqueda de scouting</h1>
-      <input name="query" placeholder="Nicho o palabra clave (ej. finanzas personales)" required />
-      <label>
-        Edad máxima del canal (días)
-        <input name="maxAgeDays" type="number" defaultValue={90} required />
-      </label>
-      <label>
-        Suscriptores máximos
-        <input name="maxSubscribers" type="number" defaultValue={100000} required />
-      </label>
-      <label>
-        Vistas promedio mínimas por video
-        <input name="minAvgViews" type="number" defaultValue={1000} required />
-      </label>
-      {error && <p role="alert">{error}</p>}
-      <button type="submit" disabled={loading}>{loading ? 'Buscando...' : 'Buscar'}</button>
-    </form>
+    <div>
+      <h1 className="mb-6 text-2xl font-bold text-ink">Nueva búsqueda de scouting</h1>
+      <Card className="max-w-xl">
+        <form action={handleSubmit}>
+          <Field label="Nicho o palabra clave">
+            <Input name="query" placeholder="ej. finanzas personales" required />
+          </Field>
+          <Field label="Edad máxima del canal (días)">
+            <Input name="maxAgeDays" type="number" defaultValue={90} required />
+          </Field>
+          <Field label="Suscriptores máximos">
+            <Input name="maxSubscribers" type="number" defaultValue={100000} required />
+          </Field>
+          <Field label="Vistas promedio mínimas por video">
+            <Input name="minAvgViews" type="number" defaultValue={1000} required />
+          </Field>
+          {error && <p className="mb-4 text-sm font-medium text-accent-coral-ink" role="alert">{error}</p>}
+          <Button type="submit" disabled={loading}>{loading ? 'Buscando...' : 'Buscar'}</Button>
+        </form>
+      </Card>
+    </div>
   )
 }

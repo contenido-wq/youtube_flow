@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { createChannel } from '../actions'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Field, Input, Textarea } from '@/components/ui/Field'
 
 export default function NuevoCanalPage() {
   const [error, setError] = useState<string | null>(null)
@@ -20,17 +23,35 @@ export default function NuevoCanalPage() {
   }
 
   return (
-    <form action={handleSubmit}>
-      <h1>Nuevo canal</h1>
-      <input name="name" placeholder="Nombre del canal" required />
-      <input name="niche" placeholder="Nicho" required />
-      <input name="target_language" placeholder="Idioma (ej. es)" defaultValue="es" required />
-      <input name="target_country" placeholder="País (opcional)" />
-      <input name="brand_voice_id" placeholder="Voz de marca (opcional)" />
-      <textarea name="visual_style_reference" placeholder="Referencia de estilo visual (opcional)" />
-      <textarea name="variation_rules" placeholder="Reglas de variación obligatoria" required />
-      {error && <p role="alert">{error}</p>}
-      <button type="submit">Crear canal</button>
-    </form>
+    <div>
+      <h1 className="mb-6 text-2xl font-bold text-ink">Nuevo canal</h1>
+      <Card className="max-w-xl">
+        <form action={handleSubmit}>
+          <Field label="Nombre del canal">
+            <Input name="name" required />
+          </Field>
+          <Field label="Nicho">
+            <Input name="niche" required />
+          </Field>
+          <Field label="Idioma (ej. es)">
+            <Input name="target_language" defaultValue="es" required />
+          </Field>
+          <Field label="País (opcional)">
+            <Input name="target_country" />
+          </Field>
+          <Field label="Voz de marca (opcional)">
+            <Input name="brand_voice_id" />
+          </Field>
+          <Field label="Referencia de estilo visual (opcional)">
+            <Textarea name="visual_style_reference" />
+          </Field>
+          <Field label="Reglas de variación obligatoria">
+            <Textarea name="variation_rules" required />
+          </Field>
+          {error && <p className="mb-4 text-sm font-medium text-accent-coral-ink" role="alert">{error}</p>}
+          <Button type="submit">Crear canal</Button>
+        </form>
+      </Card>
+    </div>
   )
 }
