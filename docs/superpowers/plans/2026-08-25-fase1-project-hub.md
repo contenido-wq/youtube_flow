@@ -6,7 +6,7 @@
 
 **Architecture:** Next.js (App Router) + TypeScript sobre Supabase (Postgres + Auth + RLS), usando `@supabase/ssr` para sesiones server-side. Autorización basada en una tabla `team_members` con un enum de roles, verificado en RLS vía una función `security definer` en un schema privado (no en un schema expuesto — evita el patrón inseguro de usar `user_metadata`/JWT claims editables por el usuario para decisiones de autorización).
 
-**Tech Stack:** Next.js 15 (App Router), TypeScript, Supabase (CLI local + Postgres + Auth), `@supabase/ssr`, `@supabase/supabase-js` v2, Vitest, Zod, React Hook Form, Node.js 22+.
+**Tech Stack:** Next.js 16 (App Router), TypeScript, Supabase (CLI local + Postgres + Auth), `@supabase/ssr`, `@supabase/supabase-js` v2, Vitest, Zod, React Hook Form, Node.js 22+.
 
 **Spec:** `docs/superpowers/specs/2026-08-25-fabrica-canales-youtube-design.md`
 
@@ -32,7 +32,7 @@ supabase/config.toml
 supabase/migrations/*.sql
 lib/supabase/client.ts                             # cliente browser
 lib/supabase/server.ts                             # cliente server (SSR)
-middleware.ts                                       # refresco de sesión
+proxy.ts                                       # refresco de sesión
 scripts/seed-team-member.ts                         # crear cuentas de equipo (admin-only, CLI)
 app/login/page.tsx
 app/(protected)/layout.tsx                          # guard de auth
@@ -351,7 +351,7 @@ git commit -m "feat: add team_members table with role-based RLS"
 **Files:**
 - Create: `lib/supabase/client.ts`
 - Create: `lib/supabase/server.ts`
-- Create: `middleware.ts`
+- Create: `proxy.ts`
 - Create: `app/login/page.tsx`
 - Create: `app/(protected)/layout.tsx`
 - Create: `scripts/seed-team-member.ts`
@@ -410,15 +410,17 @@ export async function createClient() {
 }
 ```
 
-- [ ] **Step 3: Middleware de refresco de sesión**
+- [ ] **Step 3: Proxy de refresco de sesión**
 
-`middleware.ts`:
+Nota: en Next.js 16 la convención `middleware.ts` está deprecada a favor de `proxy.ts` (misma función, nombre exportado distinto) — usar `proxy.ts` directamente evita una advertencia de build.
+
+`proxy.ts`:
 
 ```typescript
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -567,7 +569,7 @@ Expected: redirige a `/canales` sin error (aunque la página `/canales` todavía
 - [ ] **Step 8: Commit**
 
 ```bash
-git add lib/supabase middleware.ts app/login app/\(protected\) scripts/seed-team-member.ts package.json
+git add lib/supabase proxy.ts app/login app/\(protected\) scripts/seed-team-member.ts package.json
 git commit -m "feat: add SSR auth (login, protected layout, session middleware) and team seed script"
 ```
 
