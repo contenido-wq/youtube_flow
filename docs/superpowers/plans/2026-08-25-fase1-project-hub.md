@@ -102,17 +102,25 @@ Copiar a `.env.local` (no versionado) con los valores impresos por `supabase sta
 Crear `vitest.config.ts`:
 
 ```typescript
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
   },
 })
 ```
+
+Nota: Next.js resuelve el alias `@/*` solo (vía `tsconfig.json`), pero Vitest corre sobre Vite directamente y no lee `tsconfig.json` paths sin configuración explícita — de ahí el bloque `resolve.alias` de arriba, sin el cual cualquier test que importe con `@/...` falla con "Failed to resolve import" aunque el archivo exista.
 
 Crear `tests/setup.ts`:
 
