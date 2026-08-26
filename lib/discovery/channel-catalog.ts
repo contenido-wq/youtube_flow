@@ -52,6 +52,10 @@ async function getUploadsPlaylistId(apiKey: string, channelId: string): Promise<
   const response = await fetch(url.toString())
   const data = await response.json()
 
+  if (data.error) {
+    throw new Error(`channels.list falló: ${data.error.message ?? JSON.stringify(data.error)}`)
+  }
+
   return data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
 }
 
@@ -70,6 +74,10 @@ async function getPlaylistPage(
   const response = await fetch(url.toString())
   const data = await response.json()
 
+  if (data.error) {
+    throw new Error(`playlistItems.list falló: ${data.error.message ?? JSON.stringify(data.error)}`)
+  }
+
   return {
     items: (data.items ?? []).map((item: { contentDetails: { videoId: string; videoPublishedAt: string } }) => ({
       videoId: item.contentDetails.videoId,
@@ -79,29 +87,47 @@ async function getPlaylistPage(
   }
 }
 
+// videos.list rechaza con un 400 "invalid filter parameter" si el parámetro
+// `id` trae más de 50 valores — hay que dividir en lotes de máximo 50.
+const VIDEOS_LIST_BATCH_SIZE = 50
+
 async function getVideoDetails(
   apiKey: string,
   videoIds: string[]
 ): Promise<{ videoId: string; title: string; viewCount: number; durationSeconds: number }[]> {
-  const url = new URL(`${BASE_URL}/videos`)
-  url.searchParams.set('part', 'snippet,statistics,contentDetails')
-  url.searchParams.set('id', videoIds.join(','))
-  url.searchParams.set('key', apiKey)
+  const results: { videoId: string; title: string; viewCount: number; durationSeconds: number }[] = []
 
-  const response = await fetch(url.toString())
-  const data = await response.json()
+  for (let i = 0; i < videoIds.length; i += VIDEOS_LIST_BATCH_SIZE) {
+    const batch = videoIds.slice(i, i + VIDEOS_LIST_BATCH_SIZE)
 
-  return (data.items ?? []).map(
-    (item: {
-      id: string
-      snippet: { title: string }
-      statistics: { viewCount?: string }
-      contentDetails: { duration: string }
-    }) => ({
-      videoId: item.id,
-      title: item.snippet.title,
-      viewCount: Number(item.statistics.viewCount ?? 0),
-      durationSeconds: parseISO8601Duration(item.contentDetails.duration),
-    })
-  )
+    const url = new URL(`${BASE_URL}/videos`)
+    url.searchParams.set('part', 'snippet,statistics,contentDetails')
+    url.searchParams.set('id', batch.join(','))
+    url.searchParams.set('key', apiKey)
+
+    const response = await fetch(url.toString())
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(`videos.list falló: ${data.error.message ?? JSON.stringify(data.error)}`)
+    }
+
+    results.push(
+      ...(data.items ?? []).map(
+        (item: {
+          id: string
+          snippet: { title: string }
+          statistics: { viewCount?: string }
+          contentDetails: { duration: string }
+        }) => ({
+          videoId: item.id,
+          title: item.snippet.title,
+          viewCount: Number(item.statistics.viewCount ?? 0),
+          durationSeconds: parseISO8601Duration(item.contentDetails.duration),
+        })
+      )
+    )
+  }
+
+  return results
 }
