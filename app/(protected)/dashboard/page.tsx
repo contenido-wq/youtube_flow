@@ -1,7 +1,10 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { getDashboardNewsItems } from '@/lib/news/ensure-fresh-digest'
+import type { NewsCategory } from '@/lib/news/types'
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -12,8 +15,29 @@ function StatCard({ label, value }: { label: string; value: number }) {
   )
 }
 
+const CATEGORY_ORDER: NewsCategory[] = ['oficial', 'competencia', 'canales_nuevos', 'recomendacion']
+
+const CATEGORY_LABELS: Record<NewsCategory, string> = {
+  oficial: 'Oficial YouTube',
+  competencia: 'Competencia',
+  canales_nuevos: 'Canales nuevos',
+  recomendacion: 'Recomendaciones',
+}
+
+const CATEGORY_BADGE_TONE: Record<NewsCategory, 'lime' | 'sky' | 'coral' | 'neutral'> = {
+  oficial: 'sky',
+  competencia: 'coral',
+  canales_nuevos: 'lime',
+  recomendacion: 'neutral',
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
 
   const [
     { count: channelsCount },
@@ -44,6 +68,17 @@ export default async function DashboardPage() {
   const clonePlansByChannel = new Map<string, number>()
   for (const p of clonePlans ?? []) {
     clonePlansByChannel.set(p.channel_id, (clonePlansByChannel.get(p.channel_id) ?? 0) + 1)
+  }
+
+  const niches = Array.from(new Set((channels ?? []).map((c) => c.niche)))
+
+  let newsItems: Awaited<ReturnType<typeof getDashboardNewsItems>> = []
+  try {
+    newsItems = await getDashboardNewsItems(supabase, user.id, niches)
+  } catch {
+    // La sección de noticias es complementaria — si falla, el resto del
+    // dashboard debe seguir funcionando.
+    newsItems = []
   }
 
   return (
@@ -89,6 +124,52 @@ export default async function DashboardPage() {
                 </div>
               </Card>
             </Link>
+          )
+        })}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold text-ink">Noticias</h2>
+
+        {newsItems.length === 0 && (
+          <Card>
+            <p className="text-muted">Todavía no hay noticias generadas.</p>
+          </Card>
+        )}
+
+        {CATEGORY_ORDER.map((category) => {
+          const items = newsItems.filter((item) => item.category === category)
+          if (items.length === 0) return null
+
+          return (
+            <div key={category} className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+                {CATEGORY_LABELS[category]}
+              </h3>
+              <div className="grid gap-3">
+                {items.map((item) => (
+                  <Card key={item.id}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <Badge tone={CATEGORY_BADGE_TONE[category]}>{CATEGORY_LABELS[category]}</Badge>
+                        <p className="mt-2 font-semibold text-ink">{item.title}</p>
+                        <p className="mt-1 text-sm text-muted">{item.summary}</p>
+                      </div>
+                      {item.source_url && (
+                        <a
+                          href={item.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-sm font-medium text-ink underline"
+                        >
+                          Ver fuente
+                        </a>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
           )
         })}
       </div>
