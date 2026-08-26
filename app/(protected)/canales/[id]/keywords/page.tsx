@@ -13,13 +13,19 @@ export default function KeywordsPage() {
   const [keywordData, setKeywordData] = useState<KeywordData[]>([])
   const [titles, setTitles] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError(null)
     const result = await researchTopic(topic)
-    setKeywordData(result.keywordData)
-    setTitles(result.titles)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setKeywordData(result.keywordData)
+      setTitles(result.titles)
+    }
     setLoading(false)
   }
 
@@ -31,6 +37,7 @@ export default function KeywordsPage() {
           <Field label="Tema del video">
             <Input value={topic} onChange={(e) => setTopic(e.target.value)} required />
           </Field>
+          {error && <p className="mb-4 text-sm font-medium text-accent-coral-ink" role="alert">{error}</p>}
           <Button type="submit" disabled={loading}>{loading ? 'Buscando...' : 'Investigar'}</Button>
         </form>
       </Card>
