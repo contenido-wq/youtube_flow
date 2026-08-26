@@ -1,14 +1,6 @@
-// Nano Banana Pro (Gemini 3 Pro Image), llamado vía el endpoint clásico y
-// estable de generateContent — la investigación de este spec encontró
-// referencias a un endpoint más nuevo ("Interactions API",
-// v1beta/interactions) en la documentación 2026 de Google, pero la forma
-// exacta de su request/response no pudo confirmarse con certeza en la
-// investigación. Este archivo usa generateContent porque es el patrón
-// documentado más estable y de más larga data del API de Gemini — SI esto
-// falla contra la API real una vez haya una GEMINI_API_KEY real configurada,
-// es la primera pista a revisar: verificar contra
-// https://ai.google.dev/gemini-api/docs/image-generation si Google movió
-// la generación de imágenes exclusivamente al nuevo endpoint.
+// Nano Banana Pro (Gemini 3 Pro Image) vía el endpoint clásico de
+// generateContent — verificado contra la API real el 2026-08-26: responde
+// 200 con un JPEG válido en candidates[0].content.parts[].inlineData.data.
 const MODEL_ID = 'gemini-3-pro-image'
 const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent`
 
