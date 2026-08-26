@@ -45,10 +45,21 @@ export async function generateDigestItems(
       'encontrados en los nichos del equipo), escribes un digest editorial corto y accionable — como un blog, ' +
       'no una lista de datos. Cada ítem debe tener un análisis y una recomendación concreta (qué tipo de canal, ' +
       'temática o formato de personaje vale la pena, o qué implica una actualización de YouTube para el equipo). ' +
-      'Genera entre 1 y 3 ítems por categoría, máximo 10 en total. Si no hay señales suficientes para una ' +
-      'categoría, omítela. Responde ÚNICAMENTE con JSON válido, sin texto adicional, con el formato: ' +
-      '{"items": [{"category": "oficial" | "competencia" | "canales_nuevos" | "recomendacion", "title": string, ' +
-      '"summary": string, "source_url": string | null, "source_channel_youtube_id": string | null}]}',
+      '\n\n' +
+      'REGLA OBLIGATORIA de cobertura de categorías: si la sección "Canales de competencia" tiene al menos un ' +
+      'canal listado, DEBES generar al menos 1 ítem con category="competencia" hablando de uno o más de esos ' +
+      'canales específicos (citando su nombre real). Si la sección "Canales nuevos" tiene al menos un canal ' +
+      'listado, DEBES generar al menos 1 ítem con category="canales_nuevos" de la misma forma. No conviertas ' +
+      'esas señales únicamente en ítems de "recomendacion" — la síntesis general va en "recomendacion", pero el ' +
+      'análisis directo de un canal de competencia o nuevo específico va en su propia categoría. Solo omití una ' +
+      'categoría si su sección de datos dice explícitamente que no hay canales encontrados. ' +
+      'Para ítems de category="competencia" o "canales_nuevos", usá el youtubeChannelId real del canal citado ' +
+      'como source_channel_youtube_id, y como source_url usá `https://www.youtube.com/channel/{ese id}`. ' +
+      '\n\n' +
+      'Genera entre 1 y 3 ítems por categoría, máximo 10 en total. Responde ÚNICAMENTE con JSON válido, sin ' +
+      'texto adicional, con el formato: {"items": [{"category": "oficial" | "competencia" | "canales_nuevos" | ' +
+      '"recomendacion", "title": string, "summary": string, "source_url": string | null, ' +
+      '"source_channel_youtube_id": string | null}]}',
     messages: [{ role: 'user', content: buildPrompt(input) }],
   })
 

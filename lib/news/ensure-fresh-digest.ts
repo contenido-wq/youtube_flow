@@ -5,6 +5,7 @@ import type { DiscoveredChannel } from '@/lib/discovery/types'
 import { fetchOfficialUpdates } from './fetch-official-updates'
 import { fetchNicheSignals } from './fetch-niche-signals'
 import { generateDigestItems } from './generate-digest'
+import { simplifyNicheQueries } from './simplify-niche-query'
 import type { NewsItemDraft } from './generate-digest'
 import type { NewsItemRow, OfficialUpdate } from './types'
 
@@ -140,7 +141,11 @@ export async function getDashboardNewsItems(
     userId,
     niches,
     fetchOfficialUpdates: () => fetchOfficialUpdates(apiKey),
-    fetchNicheSignals: (n) => fetchNicheSignals(engine, n),
+    // Las descripciones de nicho suelen ser oraciones largas y detalladas
+    // (pensadas para prompts de generación de contenido), pero la búsqueda
+    // de canales de YouTube casi no devuelve resultados con consultas tan
+    // largas — se simplifican a una consulta corta antes de buscar.
+    fetchNicheSignals: async (n) => fetchNicheSignals(engine, await simplifyNicheQueries(createAnthropicClient(), n)),
     generateDigestItems: (input) => generateDigestItems(createAnthropicClient(), input),
   })
 }
