@@ -166,34 +166,34 @@ export default async function DashboardPage() {
 
                   return (
                     <Card key={item.id}>
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-1 items-start justify-between gap-3">
-                          <div>
-                            <Badge tone={CATEGORY_BADGE_TONE[category]}>{CATEGORY_LABELS[category]}</Badge>
-                            <p className="mt-2 font-semibold text-ink">{item.title}</p>
-                            <p className="mt-1 text-sm text-muted">{item.summary}</p>
-                            <p className="mt-2 text-xs text-muted">{formatNewsDate(item.created_at)}</p>
-                          </div>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <Badge tone={CATEGORY_BADGE_TONE[category]}>{CATEGORY_LABELS[category]}</Badge>
+                          <p className="mt-2 font-semibold text-ink">{item.title}</p>
+                          <p className="mt-1 text-sm text-muted">{item.summary}</p>
+                          <p className="mt-2 text-xs text-muted">{formatNewsDate(item.created_at)}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
                           {item.source_url && (
                             <a
                               href={item.source_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 text-sm font-medium text-ink underline"
+                              className="text-sm font-medium text-ink underline"
                             >
                               Ver fuente
                             </a>
                           )}
+                          {thumbnailUrl && (
+                            <Image
+                              src={thumbnailUrl}
+                              alt=""
+                              width={120}
+                              height={68}
+                              className="rounded-lg object-cover"
+                            />
+                          )}
                         </div>
-                        {thumbnailUrl && (
-                          <Image
-                            src={thumbnailUrl}
-                            alt=""
-                            width={120}
-                            height={68}
-                            className="shrink-0 rounded-lg object-cover"
-                          />
-                        )}
                       </div>
                     </Card>
                   )
