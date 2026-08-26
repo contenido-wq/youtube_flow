@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { splitScript } from './actions'
+import { splitScript, generateThumbnail } from './actions'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Field, Input } from '@/components/ui/Field'
+import { Field, Input, Textarea } from '@/components/ui/Field'
 import { Badge } from '@/components/ui/Badge'
 
 interface VideoRow {
@@ -19,6 +19,7 @@ interface VideoRow {
   seo_pinned_comment: string | null
   seo_thumbnail_phrases: string[] | null
   seo_image_prompt: string | null
+  thumbnail_urls: string[] | null
 }
 
 export default function GuionDetallePage() {
@@ -26,6 +27,10 @@ export default function GuionDetallePage() {
   const [video, setVideo] = useState<VideoRow | null>(null)
   const [blockSize, setBlockSize] = useState(3000)
   const [blocks, setBlocks] = useState<string[]>([])
+  const [thumbnailPrompt, setThumbnailPrompt] = useState('')
+  const [thumbnailLoading, setThumbnailLoading] = useState(false)
+  const [thumbnailError, setThumbnailError] = useState<string | null>(null)
+  const [thumbnailUrls, setThumbnailUrls] = useState<string[]>([])
 
   useEffect(() => {
     const supabase = createClient()
@@ -34,12 +39,29 @@ export default function GuionDetallePage() {
       .select('*')
       .eq('id', params.videoId)
       .single()
-      .then(({ data }) => setVideo(data))
+      .then(({ data }) => {
+        setVideo(data)
+        setThumbnailPrompt(data?.seo_image_prompt ?? '')
+        setThumbnailUrls(data?.thumbnail_urls ?? [])
+      })
   }, [params.videoId])
 
   async function handleSplit() {
     if (!video?.script_content) return
     setBlocks(await splitScript(video.script_content, blockSize))
+  }
+
+  async function handleGenerateThumbnail() {
+    if (!thumbnailPrompt) return
+    setThumbnailLoading(true)
+    setThumbnailError(null)
+    const result = await generateThumbnail(params.videoId, thumbnailPrompt)
+    setThumbnailLoading(false)
+    if (result.error) {
+      setThumbnailError(result.error)
+      return
+    }
+    if (result.url) setThumbnailUrls((prev) => [...prev, result.url as string])
   }
 
   if (!video) return <p className="text-muted">Cargando...</p>
@@ -73,6 +95,26 @@ export default function GuionDetallePage() {
               {video.seo_thumbnail_phrases?.map((p) => <Badge key={p} tone="coral">{p}</Badge>)}
             </div>
             <p className="text-sm text-muted"><strong>Prompt de imagen:</strong> {video.seo_image_prompt}</p>
+          </Card>
+
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-muted">Miniaturas</h2>
+            <Field label="Prompt de imagen (editable)">
+              <Textarea value={thumbnailPrompt} onChange={(e) => setThumbnailPrompt(e.target.value)} className="min-h-24" />
+            </Field>
+            {thumbnailError && <p className="mb-3 text-sm font-medium text-accent-coral-ink" role="alert">{thumbnailError}</p>}
+            <Button variant="secondary" onClick={handleGenerateThumbnail} disabled={thumbnailLoading || !thumbnailPrompt}>
+              {thumbnailLoading ? 'Generando...' : '+ Generar miniatura'}
+            </Button>
+
+            {thumbnailUrls.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {thumbnailUrls.map((url) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={url} src={url} alt="Miniatura generada" className="aspect-video w-full rounded-control object-cover" />
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card>

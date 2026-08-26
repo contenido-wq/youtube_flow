@@ -12,6 +12,7 @@ import {
   IconFileText,
   IconCopy,
   IconHash,
+  IconImage,
 } from '@/components/ui/icons'
 import { createClient } from '@/lib/supabase/client'
 
@@ -25,6 +26,7 @@ const MENU_ITEMS = [
   { href: '/canales', label: 'Canales', description: 'Ver todos tus canales', Icon: IconGrid },
   { href: '/canales/nuevo', label: 'Nuevo canal', description: 'Crear uno desde cero, o pegando su URL de YouTube', Icon: IconGrid },
   { href: '/guiones', label: 'Guiones', description: 'Todos los guiones generados, de cualquier canal', Icon: IconFileText },
+  { href: '/guiones', label: 'Miniaturas', description: 'Genera miniaturas con IA desde el detalle de cada guion', Icon: IconImage },
   { href: '/descubrimiento', label: 'Descubrimiento', description: 'Scouting de canales ganadores para modelar', Icon: IconRadar },
   { href: '/canales', label: 'Clonar canal', description: 'Elige un canal para generar un plan de clonación', Icon: IconCopy },
   { href: '/canales', label: 'Keywords y títulos', description: 'Elige un canal para investigar un tema', Icon: IconHash },
