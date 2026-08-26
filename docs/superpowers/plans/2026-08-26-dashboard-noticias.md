@@ -369,7 +369,9 @@ describe('fetchOfficialUpdates', () => {
   it('sigue con los demás handles si uno no se puede resolver', async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
 
-    // Handle 1: no se encuentra
+    // Handle 1: no se encuentra ni por lookup directo (forHandle) ni por el
+    // fallback de búsqueda por nombre que hace resolveChannelFromUrl.
+    fetchMock.mockImplementationOnce(() => jsonResponse({ items: [] }))
     fetchMock.mockImplementationOnce(() => jsonResponse({ items: [] }))
     // Handle 2: se resuelve pero no tiene uploads playlist
     fetchMock.mockImplementationOnce(() => jsonResponse({ items: [{ id: 'UC_2', snippet: { title: 'Canal 2' } }] }))
@@ -378,7 +380,7 @@ describe('fetchOfficialUpdates', () => {
     const updates = await fetchOfficialUpdates('fake-key', ['@NoExiste', '@SinPlaylist'])
 
     expect(updates).toEqual([])
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 })
 ```
