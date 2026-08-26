@@ -81,4 +81,50 @@ describe('fetchOfficialUpdates', () => {
     expect(updates).toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
+
+  it('sigue con los demás handles si playlistItems.list falla para uno (p.ej. una playlist de uploads inválida)', async () => {
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
+    const now = Date.now()
+    const recent = new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString()
+
+    // Handle 1 (@SinUploads): se resuelve, tiene playlist, pero playlistItems.list falla
+    // (caso real: @TeamYouTube devuelve un uploads playlist id que YouTube rechaza porque
+    // el canal casi no sube videos).
+    fetchMock.mockImplementationOnce(() =>
+      jsonResponse({ items: [{ id: 'UC_1', snippet: { title: 'Canal Sin Uploads' } }] })
+    )
+    fetchMock.mockImplementationOnce(() =>
+      jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU_invalida' } } }] })
+    )
+    fetchMock.mockImplementationOnce(() =>
+      jsonResponse({ error: { message: "The playlist identified with the request's playlistId parameter cannot be found." } })
+    )
+    // Handle 2 (@CanalBueno): funciona normal
+    fetchMock.mockImplementationOnce(() =>
+      jsonResponse({ items: [{ id: 'UC_2', snippet: { title: 'Canal Bueno' } }] })
+    )
+    fetchMock.mockImplementationOnce(() =>
+      jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU_2' } } }] })
+    )
+    fetchMock.mockImplementationOnce(() =>
+      jsonResponse({
+        items: [
+          {
+            snippet: {
+              title: 'Anuncio real',
+              description: 'Descripción.',
+              publishedAt: recent,
+              resourceId: { videoId: 'v_ok' },
+            },
+          },
+        ],
+      })
+    )
+
+    const updates = await fetchOfficialUpdates('fake-key', ['@SinUploads', '@CanalBueno'])
+
+    expect(updates).toHaveLength(1)
+    expect(updates[0].channelName).toBe('Canal Bueno')
+    expect(fetchMock).toHaveBeenCalledTimes(6)
+  })
 })

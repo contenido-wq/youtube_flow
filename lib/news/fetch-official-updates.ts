@@ -13,22 +13,29 @@ export async function fetchOfficialUpdates(
   const updates: OfficialUpdate[] = []
 
   for (const handle of handles) {
-    const resolved = await resolveChannelFromUrl(apiKey, handle)
-    if (!resolved) continue
+    try {
+      const resolved = await resolveChannelFromUrl(apiKey, handle)
+      if (!resolved) continue
 
-    const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, resolved.channelId)
-    if (!uploadsPlaylistId) continue
+      const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, resolved.channelId)
+      if (!uploadsPlaylistId) continue
 
-    const items = await getRecentPlaylistItems(apiKey, uploadsPlaylistId)
-    for (const item of items) {
-      if (new Date(item.publishedAt).getTime() < cutoff) continue
-      updates.push({
-        channelName: resolved.title,
-        videoId: item.videoId,
-        title: item.title,
-        description: item.description,
-        publishedAt: item.publishedAt,
-      })
+      const items = await getRecentPlaylistItems(apiKey, uploadsPlaylistId)
+      for (const item of items) {
+        if (new Date(item.publishedAt).getTime() < cutoff) continue
+        updates.push({
+          channelName: resolved.title,
+          videoId: item.videoId,
+          title: item.title,
+          description: item.description,
+          publishedAt: item.publishedAt,
+        })
+      }
+    } catch {
+      // Un canal oficial con problemas (p.ej. sin playlist de uploads
+      // utilizable, como @TeamYouTube que casi no sube videos) no debe
+      // tumbar el digest completo — se salta y se sigue con los demás.
+      continue
     }
   }
 
