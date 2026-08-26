@@ -22,7 +22,7 @@ export default function LoginPage() {
       setError('Correo o contraseña incorrectos.')
       return
     }
-    router.push('/canales')
+    router.push('/dashboard')
     router.refresh()
   }
 

@@ -13,6 +13,14 @@ const base = {
   strokeLinejoin: 'round' as const,
 }
 
+export function IconActivity(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <polyline points="3 12 8 12 10 18 14 6 16 12 21 12" />
+    </svg>
+  )
+}
+
 export function IconGrid(props: IconProps) {
   return (
     <svg {...base} {...props}>

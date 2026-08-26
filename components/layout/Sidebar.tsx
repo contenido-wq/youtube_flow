@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { IconGrid, IconRadar, IconUsers, IconLogout } from '@/components/ui/icons'
+import { IconActivity, IconGrid, IconRadar, IconUsers, IconLogout } from '@/components/ui/icons'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
+  { href: '/dashboard', label: 'Dashboard', Icon: IconActivity },
   { href: '/canales', label: 'Canales', Icon: IconGrid },
   { href: '/descubrimiento', label: 'Descubrimiento', Icon: IconRadar },
   { href: '/equipo', label: 'Equipo', Icon: IconUsers },
