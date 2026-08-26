@@ -20,19 +20,27 @@ export async function createTestUser(role: string, emailPrefix: string) {
   })
   if (error || !data.user) throw new Error(`No se pudo crear usuario de prueba: ${error?.message}`)
 
-  const { error: insertError } = await admin
-    .from('team_members')
-    .insert({ id: data.user.id, email, role })
-  if (insertError) throw new Error(`No se pudo insertar team_member: ${insertError.message}`)
+  // Si algo después de este punto falla, el usuario de auth ya existe pero
+  // nunca se devuelve su userId al llamador — sin este catch, ese usuario
+  // queda huérfano para siempre (nadie más tiene su id para poder borrarlo).
+  try {
+    const { error: insertError } = await admin
+      .from('team_members')
+      .insert({ id: data.user.id, email, role })
+    if (insertError) throw new Error(`No se pudo insertar team_member: ${insertError.message}`)
 
-  const scopedClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { error: signInError } = await scopedClient.auth.signInWithPassword({ email, password })
-  if (signInError) throw new Error(`No se pudo iniciar sesión de prueba: ${signInError.message}`)
+    const scopedClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { error: signInError } = await scopedClient.auth.signInWithPassword({ email, password })
+    if (signInError) throw new Error(`No se pudo iniciar sesión de prueba: ${signInError.message}`)
 
-  return { client: scopedClient, userId: data.user.id, email }
+    return { client: scopedClient, userId: data.user.id, email }
+  } catch (err) {
+    await admin.auth.admin.deleteUser(data.user.id)
+    throw err
+  }
 }
 
 export async function deleteTestUser(userId: string) {

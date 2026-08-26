@@ -18,6 +18,7 @@
 - Nunca usar `raw_user_meta_data` / `user_metadata` en decisiones de autorización (es editable por el usuario). La autorización por rol vive en la tabla `team_members`, no en el JWT.
 - Un UPDATE bloqueado por RLS no lanza error — actualiza 0 filas silenciosamente (comportamiento documentado de Postgres/PostgREST). Cualquier test que verifique "esto no debería poder actualizarse" debe confirmar 0 filas devueltas (`.select()` después del `.update()`) o que el valor no cambió, nunca `expect(error).not.toBeNull()`.
 - **`admin.auth.admin.deleteUser()` no lanza excepción si falla — devuelve `{ error }`.** Si un test crea `channels`/`discovery_runs`/`channel_clone_plans` con `created_by` apuntando al usuario de prueba, borrar ese usuario sin borrar antes esas filas falla por FK (no cascade a propósito) y, si no se revisa `error`, el fallo queda invisible: el usuario de prueba (y todo lo que creó) se queda para siempre en la base real conectada. `deleteTestUser` (Task 2) ya revisa el error y borra las filas dependientes primero — cualquier tabla nueva con `created_by uuid references team_members(id)` debe agregarse ahí también.
+- **`createTestUser` puede dejar un usuario de `auth.users` huérfano si falla DESPUÉS de crearlo** (ej. el insert en `team_members` falla por rate-limiting de la API de administración de Supabase bajo carga — pasó de verdad corriendo la suite completa muchas veces seguidas). Como el helper nunca llega a devolver el `userId` cuando falla, `afterEach`/`deleteTestUser` no tiene forma de enterarse de que ese usuario existe — queda huérfano para siempre. `createTestUser` (Task 2) ya envuelve todo lo posterior a la creación del usuario en un `try/catch` que lo borra antes de relanzar el error.
 - Ninguna función `security definer` va en un schema expuesto (`public`); van en un schema privado (`private`).
 - Roles del sistema (spec sección 1): `admin`, `investigador`, `guionista`, `editor`, `aprobador`. En esta fase solo `admin` e `investigador` tienen permisos de escritura activos (canales); los demás roles existen ya en el enum para que los módulos futuros (Script/Voice/Visual Factory) no requieran una migración de esquema para agregarlos.
 - Sin auto-registro: la creación de cuentas de equipo es responsabilidad de un `admin` (vía script de seed en esta fase — una UI de invitación queda fuera de alcance de Fase 1, ver Task 3).
@@ -193,19 +194,27 @@ export async function createTestUser(role: string, emailPrefix: string) {
   })
   if (error || !data.user) throw new Error(`No se pudo crear usuario de prueba: ${error?.message}`)
 
-  const { error: insertError } = await admin
-    .from('team_members')
-    .insert({ id: data.user.id, email, role })
-  if (insertError) throw new Error(`No se pudo insertar team_member: ${insertError.message}`)
+  // Si algo después de este punto falla, el usuario de auth ya existe pero
+  // nunca se devuelve su userId al llamador — sin este catch, ese usuario
+  // queda huérfano para siempre (nadie más tiene su id para poder borrarlo).
+  try {
+    const { error: insertError } = await admin
+      .from('team_members')
+      .insert({ id: data.user.id, email, role })
+    if (insertError) throw new Error(`No se pudo insertar team_member: ${insertError.message}`)
 
-  const scopedClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { error: signInError } = await scopedClient.auth.signInWithPassword({ email, password })
-  if (signInError) throw new Error(`No se pudo iniciar sesión de prueba: ${signInError.message}`)
+    const scopedClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const { error: signInError } = await scopedClient.auth.signInWithPassword({ email, password })
+    if (signInError) throw new Error(`No se pudo iniciar sesión de prueba: ${signInError.message}`)
 
-  return { client: scopedClient, userId: data.user.id, email }
+    return { client: scopedClient, userId: data.user.id, email }
+  } catch (err) {
+    await admin.auth.admin.deleteUser(data.user.id)
+    throw err
+  }
 }
 
 export async function deleteTestUser(userId: string) {
