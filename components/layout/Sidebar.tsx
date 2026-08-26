@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -54,9 +55,7 @@ export function Sidebar() {
         className="fixed left-4 top-4 bottom-4 z-20 flex w-16 flex-col items-center justify-between rounded-[32px] bg-sidebar py-5"
       >
         <div className="flex flex-col items-center gap-3">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-accent-lime text-accent-lime-ink font-bold">
-            FC
-          </div>
+          <Image src="/logo.png" alt="Fábrica de Canales" width={40} height={40} className="mb-2 h-10 w-10 rounded-2xl" priority />
 
           <div className="relative">
             <button

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
@@ -30,9 +31,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <Card className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-lime font-bold text-accent-lime-ink">
-            FC
-          </div>
+          <Image src="/logo.png" alt="Fábrica de Canales" width={48} height={48} className="h-12 w-12 rounded-2xl" priority />
           <div>
             <h1 className="text-xl font-bold text-ink">Fábrica de Canales</h1>
             <p className="text-sm text-muted">Entra con tu cuenta de equipo</p>
