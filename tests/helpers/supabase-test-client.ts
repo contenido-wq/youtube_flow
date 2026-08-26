@@ -56,6 +56,7 @@ export async function deleteTestUser(userId: string) {
   await admin.from('channels').delete().eq('created_by', userId)
   await admin.from('discovery_runs').delete().eq('created_by', userId)
   await admin.from('channel_clone_plans').delete().eq('created_by', userId)
+  await admin.from('news_digest_runs').delete().eq('created_by', userId)
 
   const { error } = await admin.auth.admin.deleteUser(userId)
   if (error) throw new Error(`No se pudo borrar el usuario de prueba ${userId}: ${error.message}`)

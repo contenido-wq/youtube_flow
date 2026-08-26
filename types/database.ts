@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.17"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -287,6 +282,82 @@ export type Database = {
           },
         ]
       }
+      news_digest_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          error_message: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_digest_runs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_items: {
+        Row: {
+          category: Database["public"]["Enums"]["news_category"]
+          created_at: string
+          digest_run_id: string
+          id: string
+          source_channel_youtube_id: string | null
+          source_url: string | null
+          summary: string
+          title: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["news_category"]
+          created_at?: string
+          digest_run_id: string
+          id?: string
+          source_channel_youtube_id?: string | null
+          source_url?: string | null
+          summary: string
+          title: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["news_category"]
+          created_at?: string
+          digest_run_id?: string
+          id?: string
+          source_channel_youtube_id?: string | null
+          source_url?: string | null
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_items_digest_run_id_fkey"
+            columns: ["digest_run_id"]
+            isOneToOne: false
+            referencedRelation: "news_digest_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           created_at: string
@@ -421,6 +492,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      news_category:
+        | "oficial"
+        | "competencia"
+        | "canales_nuevos"
+        | "recomendacion"
       team_role: "admin" | "investigador" | "guionista" | "editor" | "aprobador"
     }
     CompositeTypes: {
@@ -552,7 +628,14 @@ export const Constants = {
   },
   public: {
     Enums: {
+      news_category: [
+        "oficial",
+        "competencia",
+        "canales_nuevos",
+        "recomendacion",
+      ],
       team_role: ["admin", "investigador", "guionista", "editor", "aprobador"],
     },
   },
 } as const
+
