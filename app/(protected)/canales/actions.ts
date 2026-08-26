@@ -32,21 +32,25 @@ export async function prefillChannelFromUrl(url: string): Promise<PrefillChannel
   const resolved = await resolveChannelFromUrl(process.env.YOUTUBE_API_KEY!, url)
   if (!resolved) return { error: 'No se pudo encontrar ese canal de YouTube — revisa la URL', ...EMPTY_PREFILL }
 
-  const details = await fetchChannelDetails(process.env.YOUTUBE_API_KEY!, resolved.channelId)
+  try {
+    const details = await fetchChannelDetails(process.env.YOUTUBE_API_KEY!, resolved.channelId)
 
-  const anthropic = createAnthropicClient()
-  const suggestion = await suggestChannelProfile(anthropic, {
-    channelTitle: resolved.title,
-    channelDescription: details.description,
-  })
+    const anthropic = createAnthropicClient()
+    const suggestion = await suggestChannelProfile(anthropic, {
+      channelTitle: resolved.title,
+      channelDescription: details.description,
+    })
 
-  return {
-    error: null,
-    name: resolved.title,
-    target_country: details.country ?? '',
-    target_language: details.defaultLanguage?.slice(0, 2) ?? '',
-    niche: suggestion.niche,
-    variation_rules: suggestion.variationRules,
+    return {
+      error: null,
+      name: resolved.title,
+      target_country: details.country ?? '',
+      target_language: details.defaultLanguage?.slice(0, 2) ?? '',
+      niche: suggestion.niche,
+      variation_rules: suggestion.variationRules,
+    }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Error desconocido autocompletando el canal', ...EMPTY_PREFILL }
   }
 }
 

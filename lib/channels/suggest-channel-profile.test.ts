@@ -34,4 +34,20 @@ describe('suggestChannelProfile', () => {
 
     await expect(suggestChannelProfile(client, baseInput)).rejects.toThrow(/JSON/)
   })
+
+  it('pide suficientes tokens de salida para no truncar el JSON a mitad de camino', async () => {
+    let capturedMaxTokens = 0
+    const client = {
+      messages: {
+        create: async (params: { max_tokens: number }) => {
+          capturedMaxTokens = params.max_tokens
+          return { content: [{ type: 'text', text: JSON.stringify({ niche: 'x', variationRules: 'y' }) }] }
+        },
+      },
+    }
+
+    await suggestChannelProfile(client, baseInput)
+
+    expect(capturedMaxTokens).toBeGreaterThanOrEqual(2048)
+  })
 })

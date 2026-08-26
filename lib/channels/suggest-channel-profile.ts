@@ -16,7 +16,7 @@ export async function suggestChannelProfile(
 ): Promise<SuggestedChannelProfile> {
   const response = await client.messages.create({
     model: CLAUDE_MODEL,
-    max_tokens: 1024,
+    max_tokens: 2048,
     system:
       'A partir del título y la descripción de un canal de YouTube, sugiere (1) un nicho corto y ' +
       'específico, y (2) reglas de variación concretas y accionables para producir videos similares ' +
