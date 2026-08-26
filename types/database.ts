@@ -203,6 +203,7 @@ export type Database = {
           id: string
           monetization_score: number
           recent_video_count: number
+          saved: boolean
           shorts_ratio: number
           subscriber_count: number | null
           upload_velocity_per_week: number
@@ -217,6 +218,7 @@ export type Database = {
           id?: string
           monetization_score: number
           recent_video_count: number
+          saved?: boolean
           shorts_ratio: number
           subscriber_count?: number | null
           upload_velocity_per_week: number
@@ -231,6 +233,7 @@ export type Database = {
           id?: string
           monetization_score?: number
           recent_video_count?: number
+          saved?: boolean
           shorts_ratio?: number
           subscriber_count?: number | null
           upload_velocity_per_week?: number

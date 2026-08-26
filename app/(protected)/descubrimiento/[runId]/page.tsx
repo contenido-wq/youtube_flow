@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { CircularProgress } from '@/components/ui/CircularProgress'
 import { Badge } from '@/components/ui/Badge'
+import { SaveResultButton } from '@/components/discovery/SaveResultButton'
 
 export default async function ResultadosPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params
@@ -31,16 +32,19 @@ export default async function ResultadosPage({ params }: { params: Promise<{ run
 
       <div className="grid gap-3">
         {results?.map((r) => (
-          <Card key={r.id} className="flex items-center justify-between gap-4">
+          <Card key={r.id} className={`flex items-center justify-between gap-4 ${r.saved ? 'border border-accent-lime' : ''}`}>
             <div className="min-w-0 flex-1">
-              <a
-                href={`https://www.youtube.com/channel/${r.youtube_channel_id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-ink hover:underline"
-              >
-                {r.channel_title}
-              </a>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={`https://www.youtube.com/channel/${r.youtube_channel_id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-ink hover:underline"
+                >
+                  {r.channel_title}
+                </a>
+                {r.saved && <Badge tone="lime">Guardado</Badge>}
+              </div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
                 <span>{r.subscriber_count ?? '—'} suscriptores</span>
                 <span>·</span>
@@ -51,7 +55,10 @@ export default async function ResultadosPage({ params }: { params: Promise<{ run
                 <span>{r.upload_velocity_per_week.toFixed(1)} videos/semana</span>
               </div>
             </div>
-            <CircularProgress value={r.monetization_score} label="puntaje" />
+            <div className="flex shrink-0 items-center gap-3">
+              <CircularProgress value={r.monetization_score} label="puntaje" />
+              <SaveResultButton resultId={r.id} initialSaved={r.saved} />
+            </div>
           </Card>
         ))}
       </div>

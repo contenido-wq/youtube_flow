@@ -51,3 +51,14 @@ export async function runDiscovery(filters: ChannelSearchFilters) {
 
   redirect(`/descubrimiento/${run.id}`)
 }
+
+export async function toggleSavedResult(resultId: string, saved: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { error } = await supabase.from('discovery_results').update({ saved }).eq('id', resultId)
+  if (error) return { error: error.message }
+
+  return { error: null }
+}
