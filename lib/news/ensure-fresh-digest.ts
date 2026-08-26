@@ -24,18 +24,26 @@ export interface EnsureFreshDigestDeps {
     competencia: DiscoveredChannel[]
     canalesNuevos: DiscoveredChannel[]
   }) => Promise<NewsItemDraft[]>
+  // Solo para tests: el digest es compartido por todo el equipo por diseño
+  // (una sola tabla, no por usuario), así que en producción `getDashboardNewsItems`
+  // nunca pasa este campo y las queries siguen sin filtrar/globales como siempre.
+  // Los tests lo usan para aislar sus lecturas a las filas que su propio usuario
+  // efímero creó, evitando depender de estado global de la tabla remota compartida.
+  scopeToCreatedBy?: string
 }
 
 export async function ensureFreshDigest(deps: EnsureFreshDigestDeps): Promise<NewsItemRow[]> {
-  const { supabase, userId, niches } = deps
+  const { supabase, userId, niches, scopeToCreatedBy } = deps
 
-  const { data: lastCompleted } = await supabase
+  let lastCompletedQuery = supabase
     .from('news_digest_runs')
     .select('id, completed_at')
     .eq('status', 'completed')
+    .not('completed_at', 'is', null)
     .order('completed_at', { ascending: false })
     .limit(1)
-    .maybeSingle()
+  if (scopeToCreatedBy) lastCompletedQuery = lastCompletedQuery.eq('created_by', scopeToCreatedBy)
+  const { data: lastCompleted } = await lastCompletedQuery.maybeSingle()
 
   if (lastCompleted?.completed_at) {
     const ageHours = (Date.now() - new Date(lastCompleted.completed_at).getTime()) / (1000 * 60 * 60)
@@ -45,13 +53,14 @@ export async function ensureFreshDigest(deps: EnsureFreshDigestDeps): Promise<Ne
   }
 
   const lockCutoff = new Date(Date.now() - RUNNING_LOCK_MINUTES * 60 * 1000).toISOString()
-  const { data: activeRun } = await supabase
+  let activeRunQuery = supabase
     .from('news_digest_runs')
     .select('id')
     .eq('status', 'running')
     .gte('created_at', lockCutoff)
     .limit(1)
-    .maybeSingle()
+  if (scopeToCreatedBy) activeRunQuery = activeRunQuery.eq('created_by', scopeToCreatedBy)
+  const { data: activeRun } = await activeRunQuery.maybeSingle()
 
   if (activeRun) {
     return lastCompleted ? fetchItemsForRun(supabase, lastCompleted.id) : []

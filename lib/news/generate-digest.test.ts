@@ -59,4 +59,63 @@ describe('generateDigestItems', () => {
 
     await expect(generateDigestItems(client, baseInput)).rejects.toThrow(/forma inválida/)
   })
+
+  it('lanza un error descriptivo si source_url no es una URL válida', async () => {
+    const client = fakeAnthropicClient(
+      JSON.stringify({
+        items: [
+          {
+            category: 'oficial',
+            title: 'x',
+            summary: 'y',
+            source_url: 'no-es-una-url',
+            source_channel_youtube_id: null,
+          },
+        ],
+      })
+    )
+
+    await expect(generateDigestItems(client, baseInput)).rejects.toThrow(/forma inválida/)
+  })
+
+  it('descarta source_url que no apunte a YouTube en vez de rechazar todo el ítem', async () => {
+    const client = fakeAnthropicClient(
+      JSON.stringify({
+        items: [
+          {
+            category: 'oficial',
+            title: 'Nuevo algoritmo de Shorts',
+            summary: 'Resumen.',
+            source_url: 'https://ejemplo-malicioso.com/pagina',
+            source_channel_youtube_id: null,
+          },
+        ],
+      })
+    )
+
+    const items = await generateDigestItems(client, baseInput)
+
+    expect(items).toHaveLength(1)
+    expect(items[0].source_url).toBeNull()
+  })
+
+  it('conserva source_url cuando apunta a YouTube', async () => {
+    const client = fakeAnthropicClient(
+      JSON.stringify({
+        items: [
+          {
+            category: 'oficial',
+            title: 'Nuevo algoritmo de Shorts',
+            summary: 'Resumen.',
+            source_url: 'https://www.youtube.com/watch?v=v1',
+            source_channel_youtube_id: null,
+          },
+        ],
+      })
+    )
+
+    const items = await generateDigestItems(client, baseInput)
+
+    expect(items[0].source_url).toBe('https://www.youtube.com/watch?v=v1')
+  })
 })

@@ -22,10 +22,12 @@ export async function fetchNicheSignals(engine: DiscoveryEngine, allNiches: stri
   const competencia: DiscoveredChannel[] = []
   const canalesNuevos: DiscoveredChannel[] = []
 
-  for (const niche of distinctNiches) {
-    const results = await engine.searchChannels({ query: niche, ...NICHE_SEARCH_FILTERS })
+  const results = await Promise.all(
+    distinctNiches.map((niche) => engine.searchChannels({ query: niche, ...NICHE_SEARCH_FILTERS }))
+  )
 
-    for (const channel of results) {
+  for (const channelResults of results) {
+    for (const channel of channelResults) {
       const ageDays = (Date.now() - new Date(channel.channelPublishedAt).getTime()) / (1000 * 60 * 60 * 24)
 
       if (ageDays < NEW_CHANNEL_MAX_AGE_DAYS) {

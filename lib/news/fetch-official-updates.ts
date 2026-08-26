@@ -44,6 +44,10 @@ async function getUploadsPlaylistId(apiKey: string, channelId: string): Promise<
   const response = await fetch(url.toString())
   const data = await response.json()
 
+  if (data.error) {
+    throw new Error(`channels.list falló: ${data.error.message ?? JSON.stringify(data.error)}`)
+  }
+
   return data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
 }
 
@@ -60,14 +64,20 @@ async function getRecentPlaylistItems(
   const response = await fetch(url.toString())
   const data = await response.json()
 
-  return (data.items ?? []).map(
-    (item: {
-      snippet: { title: string; description: string; publishedAt: string; resourceId: { videoId: string } }
-    }) => ({
-      videoId: item.snippet.resourceId.videoId,
+  if (data.error) {
+    throw new Error(`playlistItems.list falló: ${data.error.message ?? JSON.stringify(data.error)}`)
+  }
+
+  type PlaylistItem = {
+    snippet: { title: string; description: string; publishedAt: string; resourceId?: { videoId?: string } }
+  }
+
+  return (data.items ?? [])
+    .filter((item: PlaylistItem) => Boolean(item.snippet?.resourceId?.videoId))
+    .map((item: PlaylistItem) => ({
+      videoId: item.snippet.resourceId!.videoId as string,
       title: item.snippet.title,
       description: item.snippet.description,
       publishedAt: item.snippet.publishedAt,
-    })
-  )
+    }))
 }

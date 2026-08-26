@@ -26,6 +26,7 @@ describe('ensureFreshDigest', () => {
       fetchOfficialUpdates: vi.fn().mockResolvedValue([]),
       fetchNicheSignals: vi.fn().mockResolvedValue(emptyNicheSignals),
       generateDigestItems,
+      scopeToCreatedBy: user.userId,
     })
 
     expect(items).toHaveLength(1)
@@ -62,6 +63,7 @@ describe('ensureFreshDigest', () => {
       fetchOfficialUpdates: vi.fn(),
       fetchNicheSignals: vi.fn(),
       generateDigestItems,
+      scopeToCreatedBy: user.userId,
     })
 
     expect(items).toHaveLength(1)
@@ -97,6 +99,7 @@ describe('ensureFreshDigest', () => {
       fetchOfficialUpdates: vi.fn().mockResolvedValue([]),
       fetchNicheSignals: vi.fn().mockResolvedValue(emptyNicheSignals),
       generateDigestItems,
+      scopeToCreatedBy: user.userId,
     })
 
     expect(generateDigestItems).toHaveBeenCalledTimes(1)
@@ -128,6 +131,7 @@ describe('ensureFreshDigest', () => {
       fetchOfficialUpdates: vi.fn().mockRejectedValue(new Error('YouTube caído')),
       fetchNicheSignals: vi.fn().mockResolvedValue(emptyNicheSignals),
       generateDigestItems: vi.fn(),
+      scopeToCreatedBy: user.userId,
     })
 
     expect(items).toHaveLength(1)
@@ -170,6 +174,7 @@ describe('ensureFreshDigest', () => {
       fetchOfficialUpdates: vi.fn().mockResolvedValue([]),
       fetchNicheSignals: vi.fn().mockResolvedValue(emptyNicheSignals),
       generateDigestItems,
+      scopeToCreatedBy: user.userId,
     })
 
     expect(items).toHaveLength(1)
@@ -215,6 +220,7 @@ describe('ensureFreshDigest', () => {
       fetchOfficialUpdates: vi.fn(),
       fetchNicheSignals: vi.fn(),
       generateDigestItems,
+      scopeToCreatedBy: user.userId,
     })
 
     expect(generateDigestItems).not.toHaveBeenCalled()
