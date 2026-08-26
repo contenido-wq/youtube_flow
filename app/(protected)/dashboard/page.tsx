@@ -167,15 +167,6 @@ export default async function DashboardPage() {
                   return (
                     <Card key={item.id}>
                       <div className="flex items-start gap-4">
-                        {thumbnailUrl && (
-                          <Image
-                            src={thumbnailUrl}
-                            alt=""
-                            width={120}
-                            height={68}
-                            className="shrink-0 rounded-lg object-cover"
-                          />
-                        )}
                         <div className="flex flex-1 items-start justify-between gap-3">
                           <div>
                             <Badge tone={CATEGORY_BADGE_TONE[category]}>{CATEGORY_LABELS[category]}</Badge>
@@ -194,6 +185,15 @@ export default async function DashboardPage() {
                             </a>
                           )}
                         </div>
+                        {thumbnailUrl && (
+                          <Image
+                            src={thumbnailUrl}
+                            alt=""
+                            width={120}
+                            height={68}
+                            className="shrink-0 rounded-lg object-cover"
+                          />
+                        )}
                       </div>
                     </Card>
                   )
