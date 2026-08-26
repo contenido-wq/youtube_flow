@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/Card'
@@ -29,6 +30,19 @@ const CATEGORY_BADGE_TONE: Record<NewsCategory, 'lime' | 'sky' | 'coral' | 'neut
   competencia: 'coral',
   canales_nuevos: 'lime',
   recomendacion: 'neutral',
+}
+
+const newsDateFormatter = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' })
+
+function formatNewsDate(isoDate: string) {
+  return newsDateFormatter.format(new Date(isoDate))
+}
+
+const YOUTUBE_WATCH_URL_PATTERN = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/
+
+function getNewsThumbnailUrl(sourceUrl: string | null): string | null {
+  const videoId = sourceUrl?.match(YOUTUBE_WATCH_URL_PATTERN)?.[1]
+  return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null
 }
 
 export default async function DashboardPage() {
@@ -147,27 +161,43 @@ export default async function DashboardPage() {
                 {CATEGORY_LABELS[category]}
               </h3>
               <div className="grid gap-3">
-                {items.map((item) => (
-                  <Card key={item.id}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <Badge tone={CATEGORY_BADGE_TONE[category]}>{CATEGORY_LABELS[category]}</Badge>
-                        <p className="mt-2 font-semibold text-ink">{item.title}</p>
-                        <p className="mt-1 text-sm text-muted">{item.summary}</p>
+                {items.map((item) => {
+                  const thumbnailUrl = getNewsThumbnailUrl(item.source_url)
+
+                  return (
+                    <Card key={item.id}>
+                      <div className="flex items-start gap-4">
+                        {thumbnailUrl && (
+                          <Image
+                            src={thumbnailUrl}
+                            alt=""
+                            width={120}
+                            height={68}
+                            className="shrink-0 rounded-lg object-cover"
+                          />
+                        )}
+                        <div className="flex flex-1 items-start justify-between gap-3">
+                          <div>
+                            <Badge tone={CATEGORY_BADGE_TONE[category]}>{CATEGORY_LABELS[category]}</Badge>
+                            <p className="mt-2 font-semibold text-ink">{item.title}</p>
+                            <p className="mt-1 text-sm text-muted">{item.summary}</p>
+                            <p className="mt-2 text-xs text-muted">{formatNewsDate(item.created_at)}</p>
+                          </div>
+                          {item.source_url && (
+                            <a
+                              href={item.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 text-sm font-medium text-ink underline"
+                            >
+                              Ver fuente
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      {item.source_url && (
-                        <a
-                          href={item.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0 text-sm font-medium text-ink underline"
-                        >
-                          Ver fuente
-                        </a>
-                      )}
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  )
+                })}
               </div>
             </div>
           )
