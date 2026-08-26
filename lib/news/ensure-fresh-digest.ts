@@ -125,7 +125,6 @@ export async function getDashboardNewsItems(
 ): Promise<NewsItemRow[]> {
   const apiKey = process.env.YOUTUBE_API_KEY!
   const engine = new YouTubeApiDiscoveryEngine(apiKey)
-  const anthropic = createAnthropicClient()
 
   return ensureFreshDigest({
     supabase,
@@ -133,6 +132,6 @@ export async function getDashboardNewsItems(
     niches,
     fetchOfficialUpdates: () => fetchOfficialUpdates(apiKey),
     fetchNicheSignals: (n) => fetchNicheSignals(engine, n),
-    generateDigestItems: (input) => generateDigestItems(anthropic, input),
+    generateDigestItems: (input) => generateDigestItems(createAnthropicClient(), input),
   })
 }
