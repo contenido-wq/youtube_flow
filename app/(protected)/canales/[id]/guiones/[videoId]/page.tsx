@@ -92,7 +92,7 @@ export default function GuionDetallePage() {
             </div>
             <p className="mb-2 text-sm text-ink"><strong>Comentario fijado:</strong> {video.seo_pinned_comment}</p>
             <div className="mb-2 flex flex-wrap gap-2">
-              {video.seo_thumbnail_phrases?.map((p) => <Badge key={p} tone="coral">{p}</Badge>)}
+              {video.seo_thumbnail_phrases?.map((p) => <Badge key={p} tone="sky">{p}</Badge>)}
             </div>
             <p className="text-sm text-muted"><strong>Prompt de imagen:</strong> {video.seo_image_prompt}</p>
           </Card>

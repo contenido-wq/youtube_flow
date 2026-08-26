@@ -1,21 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --color-canvas: #e9e9ec;
-  --color-surface: #f6f6f7;
-  --color-surface-hover: #eeeef0;
-  --color-sidebar: #1b1b1d;
-  --color-sidebar-icon: #2a2a2d;
-  --color-ink: #16171a;
-  --color-muted: #8b8d93;
-  --color-border: #dedee2;
+  /* Youtube Flow — Manual de Marca: Flow Lime #A3E139, Deep Black #0A0C0B,
+     Graphite #181B19, Off White #F5F6F3, Muted Gray #8C928C. */
+  --color-canvas: #f5f6f3;
+  --color-surface: #ffffff;
+  --color-surface-hover: #eff0ed;
+  --color-sidebar: #0a0c0b;
+  --color-sidebar-icon: #181b19;
+  --color-ink: #0a0c0b;
+  --color-muted: #8c928c;
+  --color-border: #e1e3df;
 
-  --color-accent-lime: #a8e62f;
-  --color-accent-lime-ink: #2f3d0f;
-  --color-accent-sky: #8fd3f4;
-  --color-accent-sky-ink: #1c3e4c;
-  --color-accent-coral: #f2a67e;
-  --color-accent-coral-ink: #5c3016;
+  --color-accent-lime: #a3e139;
+  --color-accent-lime-ink: #0a0c0b;
+  /* Chip neutro para metadatos secundarios (idioma, volumen, conteos) — el
+     manual reserva el verde para acción/estado (regla 80/20), así que esto
+     no es un segundo color de marca, solo un tono gris más. */
+  --color-accent-sky: #ecede9;
+  --color-accent-sky-ink: #43473f;
+  /* Único color fuera de la paleta de marca: rojo semántico para errores,
+     necesario para accesibilidad y no definido en el manual. */
+  --color-accent-coral: #fbe7e7;
+  --color-accent-coral-ink: #c22a35;
 
   --radius-card: 24px;
   --radius-control: 14px;
@@ -40,7 +47,7 @@
   --radius-card: var(--radius-card);
   --radius-control: var(--radius-control);
   --radius-pill: var(--radius-pill);
-  --font-sans: var(--font-jakarta);
+  --font-sans: var(--font-inter);
 }
 
 body {

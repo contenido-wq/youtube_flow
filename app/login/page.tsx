@@ -31,9 +31,11 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <Card className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <Image src="/logo.png" alt="Fábrica de Canales" width={48} height={48} className="h-12 w-12 rounded-2xl" priority />
+          <Image src="/logo.png" alt="Youtube Flow" width={48} height={48} className="h-12 w-12 rounded-2xl" priority />
           <div>
-            <h1 className="text-xl font-bold text-ink">Fábrica de Canales</h1>
+            <h1 className="text-xl font-bold text-ink">
+              Youtube <span className="text-accent-lime">Flow</span>
+            </h1>
             <p className="text-sm text-muted">Entra con tu cuenta de equipo</p>
           </div>
         </div>
