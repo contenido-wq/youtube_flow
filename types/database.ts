@@ -323,6 +323,7 @@ export type Database = {
           style: string
           target_character_count: number
           target_duration_seconds: number
+          thumbnail_urls: string[]
           topic: string
           updated_at: string
         }
@@ -343,6 +344,7 @@ export type Database = {
           style?: string
           target_character_count: number
           target_duration_seconds: number
+          thumbnail_urls?: string[]
           topic: string
           updated_at?: string
         }
@@ -363,6 +365,7 @@ export type Database = {
           style?: string
           target_character_count?: number
           target_duration_seconds?: number
+          thumbnail_urls?: string[]
           topic?: string
           updated_at?: string
         }
