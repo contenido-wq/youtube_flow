@@ -6,8 +6,11 @@ export interface SuggestChannelProfileInput {
 }
 
 export interface SuggestedChannelProfile {
+  suggestedName: string
   niche: string
   variationRules: string
+  brandVoice: string
+  visualStyleReference: string
 }
 
 export async function suggestChannelProfile(
@@ -16,13 +19,22 @@ export async function suggestChannelProfile(
 ): Promise<SuggestedChannelProfile> {
   const response = await client.messages.create({
     model: CLAUDE_MODEL,
-    max_tokens: 2048,
+    max_tokens: 3072,
     system:
-      'A partir del título y la descripción de un canal de YouTube, sugiere (1) un nicho corto y ' +
-      'específico, y (2) reglas de variación concretas y accionables para producir videos similares ' +
+      'A partir del título y la descripción de un canal de YouTube que el usuario quiere CLONAR ' +
+      '(modelar su estilo, no copiarlo literalmente), sugiere: ' +
+      '(1) suggestedName: un nombre de canal NUEVO y diferenciado — nunca el nombre original ni una ' +
+      'variación trivial de él, ya que usar el mismo nombre de marca sería duplicar un canal existente; ' +
+      '(2) niche: un nicho corto y específico; ' +
+      '(3) variationRules: reglas de variación concretas y accionables para producir videos similares ' +
       'sin caer en contenido templado sin variación creativa (la política "Inauthentic Content" de ' +
-      'YouTube penaliza justamente eso). Responde ÚNICAMENTE con un objeto JSON válido, sin texto ' +
-      'adicional, con el formato: {"niche": string, "variationRules": string}',
+      'YouTube penaliza justamente eso); ' +
+      '(4) brandVoice: una descripción breve (1-2 frases) del tono y personalidad narrativa a usar; ' +
+      '(5) visualStyleReference: una descripción breve (1-2 frases) del estilo visual recomendado ' +
+      '(colores, tipografía, composición) para miniaturas y video. ' +
+      'Responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional, con el formato: ' +
+      '{"suggestedName": string, "niche": string, "variationRules": string, "brandVoice": string, ' +
+      '"visualStyleReference": string}',
     messages: [
       {
         role: 'user',
