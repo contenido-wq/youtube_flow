@@ -14,7 +14,7 @@ describe('fetchChannelDetails', () => {
     vi.unstubAllGlobals()
   })
 
-  it('mapea snippet.description/country/defaultLanguage', async () => {
+  it('mapea snippet.description/country/defaultLanguage y statistics', async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
     fetchMock.mockImplementationOnce(() =>
       jsonResponse({
@@ -24,6 +24,11 @@ describe('fetchChannelDetails', () => {
               description: 'Un canal sobre finanzas personales.',
               country: 'CO',
               defaultLanguage: 'es-419',
+            },
+            statistics: {
+              subscriberCount: '125000',
+              viewCount: '48000000',
+              videoCount: '340',
             },
           },
         ],
@@ -36,10 +41,13 @@ describe('fetchChannelDetails', () => {
       description: 'Un canal sobre finanzas personales.',
       country: 'CO',
       defaultLanguage: 'es-419',
+      subscriberCount: 125000,
+      viewCount: 48000000,
+      videoCount: 340,
     })
   })
 
-  it('devuelve campos vacíos/undefined si el canal no expone country/defaultLanguage', async () => {
+  it('devuelve campos vacíos/undefined/0 si el canal no expone country/defaultLanguage/statistics', async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
     fetchMock.mockImplementationOnce(() =>
       jsonResponse({ items: [{ snippet: { description: 'Sin más datos.' } }] })
@@ -47,7 +55,14 @@ describe('fetchChannelDetails', () => {
 
     const result = await fetchChannelDetails('fake-key', 'UC_x')
 
-    expect(result).toEqual({ description: 'Sin más datos.', country: undefined, defaultLanguage: undefined })
+    expect(result).toEqual({
+      description: 'Sin más datos.',
+      country: undefined,
+      defaultLanguage: undefined,
+      subscriberCount: 0,
+      viewCount: 0,
+      videoCount: 0,
+    })
   })
 
   it('lanza un error descriptivo si la API falla', async () => {
