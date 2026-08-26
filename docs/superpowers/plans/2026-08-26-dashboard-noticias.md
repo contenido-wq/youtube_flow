@@ -19,6 +19,7 @@
 - Max 3 distinct niches searched per digest run (YouTube quota guard).
 - RLS enabled on both new tables; unlike `discovery_runs`, insert/update on `news_digest_runs`/`news_items` is open to **any authenticated role** (system-generated content, not a role-gated resource).
 - Reuse `lib/llm/anthropic-client.ts` (`createAnthropicClient`, `CLAUDE_MODEL`, `extractText`) and `lib/discovery/youtube-api-engine.ts` / `resolve-channel-url.ts` as-is — do not modify them.
+- **No local Docker Supabase.** This team develops directly against the remote Supabase project (`.env.local` points at it). `npm test` (including RLS/integration tests, which use `@supabase/supabase-js` with the service role key) runs fine directly. Never run `supabase db push`, `supabase migration repair`, or any other CLI command that mutates the remote project's schema without the user's explicit, freshly-given approval — those go through them via the `!` prefix, not through an implementer subagent.
 
 ---
 
@@ -192,7 +193,7 @@ describe('RLS: news', () => {
 - [ ] **Step 7: Run the test**
 
 Run: `npm test -- tests/rls/news.test.ts`
-Expected: PASS (requires `supabase start` to be running locally).
+Expected: PASS. This project has no local Docker Supabase — `.env.local` points at the team's remote Supabase project directly, and RLS/integration tests run against it (creating and cleaning up ephemeral test users there, same as the existing `tests/rls/*.test.ts` suite already does).
 
 - [ ] **Step 8: Commit**
 
@@ -1016,7 +1017,7 @@ describe('ensureFreshDigest', () => {
 - [ ] **Step 2: Run it to verify it fails**
 
 Run: `npm test -- lib/news/ensure-fresh-digest.test.ts`
-Expected: FAIL with "Cannot find module './ensure-fresh-digest'" (requires `supabase start` running locally, same as the RLS tests)
+Expected: FAIL with "Cannot find module './ensure-fresh-digest'" (this test hits the team's remote Supabase project via `.env.local`, same as the RLS tests — no local Docker involved)
 
 - [ ] **Step 3: Write the implementation**
 
@@ -1166,7 +1167,7 @@ export async function getDashboardNewsItems(
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npm test -- lib/news/ensure-fresh-digest.test.ts`
-Expected: PASS (requires `supabase start` running locally)
+Expected: PASS (runs against the team's remote Supabase project, same as the RLS tests)
 
 - [ ] **Step 5: Commit**
 
