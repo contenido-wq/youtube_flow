@@ -81,11 +81,12 @@ export async function createVideo(
       .update({
         status: 'scripted',
         script_content: result.scriptContent,
+        seo_titles: result.seoTitles,
         seo_description: result.seoDescription,
         seo_tags: result.seoTags,
         seo_pinned_comment: result.seoPinnedComment,
         seo_thumbnail_phrases: result.seoThumbnailPhrases,
-        seo_image_prompt: result.seoImagePrompt,
+        seo_image_prompts: result.seoImagePrompts,
       })
       .eq('id', video.id)
   } catch (err) {

@@ -14,12 +14,19 @@ interface VideoRow {
   status: string
   error_message: string | null
   script_content: string | null
+  seo_titles: string[] | null
   seo_description: string | null
   seo_tags: string[] | null
   seo_pinned_comment: string | null
   seo_thumbnail_phrases: string[] | null
-  seo_image_prompt: string | null
+  seo_image_prompts: string[] | null
   thumbnail_urls: string[] | null
+}
+
+interface ThumbnailVariation {
+  prompt: string
+  loading: boolean
+  error: string | null
 }
 
 export default function GuionDetallePage() {
@@ -27,9 +34,7 @@ export default function GuionDetallePage() {
   const [video, setVideo] = useState<VideoRow | null>(null)
   const [blockSize, setBlockSize] = useState(3000)
   const [blocks, setBlocks] = useState<string[]>([])
-  const [thumbnailPrompt, setThumbnailPrompt] = useState('')
-  const [thumbnailLoading, setThumbnailLoading] = useState(false)
-  const [thumbnailError, setThumbnailError] = useState<string | null>(null)
+  const [variations, setVariations] = useState<ThumbnailVariation[]>([])
   const [thumbnailUrls, setThumbnailUrls] = useState<string[]>([])
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function GuionDetallePage() {
       .single()
       .then(({ data }) => {
         setVideo(data)
-        setThumbnailPrompt(data?.seo_image_prompt ?? '')
+        setVariations((data?.seo_image_prompts ?? []).map((prompt: string) => ({ prompt, loading: false, error: null })))
         setThumbnailUrls(data?.thumbnail_urls ?? [])
       })
   }, [params.videoId])
@@ -51,16 +56,17 @@ export default function GuionDetallePage() {
     setBlocks(await splitScript(video.script_content, blockSize))
   }
 
-  async function handleGenerateThumbnail() {
-    if (!thumbnailPrompt) return
-    setThumbnailLoading(true)
-    setThumbnailError(null)
-    const result = await generateThumbnail(params.videoId, thumbnailPrompt)
-    setThumbnailLoading(false)
-    if (result.error) {
-      setThumbnailError(result.error)
-      return
-    }
+  function updateVariation(index: number, patch: Partial<ThumbnailVariation>) {
+    setVariations((prev) => prev.map((v, i) => (i === index ? { ...v, ...patch } : v)))
+  }
+
+  async function handleGenerateThumbnail(index: number) {
+    const variation = variations[index]
+    if (!variation?.prompt) return
+
+    updateVariation(index, { loading: true, error: null })
+    const result = await generateThumbnail(params.videoId, variation.prompt)
+    updateVariation(index, { loading: false, error: result.error })
     if (result.url) setThumbnailUrls((prev) => [...prev, result.url as string])
   }
 
@@ -85,27 +91,55 @@ export default function GuionDetallePage() {
           </Card>
 
           <Card>
+            <h2 className="mb-3 text-sm font-semibold text-muted">Títulos</h2>
+            <ol className="flex flex-col gap-2">
+              {video.seo_titles?.map((title, i) => (
+                <li key={i} className="rounded-control bg-canvas px-3 py-2 text-sm text-ink">
+                  <span className="mr-2 font-semibold text-muted">{i + 1}.</span>
+                  {title}
+                </li>
+              ))}
+            </ol>
+          </Card>
+
+          <Card>
             <h2 className="mb-3 text-sm font-semibold text-muted">SEO</h2>
             <p className="mb-2 text-sm text-ink">{video.seo_description}</p>
             <div className="mb-2 flex flex-wrap gap-2">
               {video.seo_tags?.map((t) => <Badge key={t} tone="sky">{t}</Badge>)}
             </div>
             <p className="mb-2 text-sm text-ink"><strong>Comentario fijado:</strong> {video.seo_pinned_comment}</p>
-            <div className="mb-2 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {video.seo_thumbnail_phrases?.map((p) => <Badge key={p} tone="sky">{p}</Badge>)}
             </div>
-            <p className="text-sm text-muted"><strong>Prompt de imagen:</strong> {video.seo_image_prompt}</p>
           </Card>
 
           <Card>
             <h2 className="mb-3 text-sm font-semibold text-muted">Miniaturas</h2>
-            <Field label="Prompt de imagen (editable)">
-              <Textarea value={thumbnailPrompt} onChange={(e) => setThumbnailPrompt(e.target.value)} className="min-h-24" />
-            </Field>
-            {thumbnailError && <p className="mb-3 text-sm font-medium text-accent-coral-ink" role="alert">{thumbnailError}</p>}
-            <Button variant="secondary" onClick={handleGenerateThumbnail} disabled={thumbnailLoading || !thumbnailPrompt}>
-              {thumbnailLoading ? 'Generando...' : '+ Generar miniatura'}
-            </Button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {variations.map((variation, i) => (
+                <div key={i} className="rounded-control bg-canvas p-3">
+                  <p className="mb-2 text-xs font-semibold text-muted">Variación {i + 1}</p>
+                  <Field label="Prompt de imagen (editable)">
+                    <Textarea
+                      value={variation.prompt}
+                      onChange={(e) => updateVariation(i, { prompt: e.target.value })}
+                      className="min-h-24"
+                    />
+                  </Field>
+                  {variation.error && (
+                    <p className="mb-2 text-sm font-medium text-accent-coral-ink" role="alert">{variation.error}</p>
+                  )}
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleGenerateThumbnail(i)}
+                    disabled={variation.loading || !variation.prompt}
+                  >
+                    {variation.loading ? 'Generando...' : '+ Generar miniatura'}
+                  </Button>
+                </div>
+              ))}
+            </div>
 
             {thumbnailUrls.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">

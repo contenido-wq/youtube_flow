@@ -394,10 +394,11 @@ export type Database = {
           reference_transcript: string | null
           script_content: string | null
           seo_description: string | null
-          seo_image_prompt: string | null
+          seo_image_prompts: string[] | null
           seo_pinned_comment: string | null
           seo_tags: string[] | null
           seo_thumbnail_phrases: string[] | null
+          seo_titles: string[] | null
           status: string
           style: string
           target_character_count: number
@@ -415,10 +416,11 @@ export type Database = {
           reference_transcript?: string | null
           script_content?: string | null
           seo_description?: string | null
-          seo_image_prompt?: string | null
+          seo_image_prompts?: string[] | null
           seo_pinned_comment?: string | null
           seo_tags?: string[] | null
           seo_thumbnail_phrases?: string[] | null
+          seo_titles?: string[] | null
           status?: string
           style?: string
           target_character_count: number
@@ -436,10 +438,11 @@ export type Database = {
           reference_transcript?: string | null
           script_content?: string | null
           seo_description?: string | null
-          seo_image_prompt?: string | null
+          seo_image_prompts?: string[] | null
           seo_pinned_comment?: string | null
           seo_tags?: string[] | null
           seo_thumbnail_phrases?: string[] | null
+          seo_titles?: string[] | null
           status?: string
           style?: string
           target_character_count?: number
